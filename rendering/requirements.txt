@@ -2,7 +2,8 @@ Django==3.1.4
 django-concurrency
 django-cors-headers
 django-admin-list-filter-dropdown==1.0.2
-django-environ
+dj-database-url
+python-dotenv
 social-auth-app-django
 wcmatch
 Pillow
