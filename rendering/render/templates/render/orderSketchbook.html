@@ -1,0 +1,41 @@
+{% extends 'header.html' %}
+{% load static %}
+{% load product_tags %}
+{% load render_tags %}
+
+{% block content %}
+
+<form action="{% url 'render:order-sketchbook' pk=order.id %}" method="POST" name="ordersketchbook">
+ {% csrf_token %}
+ <div class="row">
+   <div class="col-12 col-md-6">
+    <div hidden>
+     <p>renders:<span id="renders-count"></span></p>
+     <p>variants:<span id="variants-count"></span></p>
+    </div>
+     <div id="kind-0">
+      {% include "sketchbook_leftpane.html" with parts=parts %}
+     </div>
+   </div>
+   <div class="col-12 col-md-6">
+       {% include "sketchbook_rightpane.html" %}
+   </div>
+ </div>
+</form>
+
+ <!-- this data needs to js code on scketbook user interactions -->
+<div class="invisible" height="0" id="render-images" product="{{order.kind.product.id}}" order="{{order.id}}" hidden>
+     <div id="patterns">
+      {# regroup finishes|dictsort:"pattern_id" by pattern_id as patterns_list #}
+        {% for pat in order.kind.patterns %}
+         <div pattern_id="{{pat.id}}">{{pat.finishes|join_ids:','}}</div>
+        {% endfor %}
+     </div>
+     <div id="media-root" mediaurl="{% get_media_prefix %}" swatches_root="{% static 'material/swatches/swatch_'%}" web_img="{% static 'webapp/img/' %}"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript" src="{% static 'webapp/js/get_ajax.js'%}"></script>
+<script type="text/javascript" src="{% static 'render/js/sketchbook.js'%}"></script>
+{% endblock %}

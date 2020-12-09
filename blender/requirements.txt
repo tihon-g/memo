@@ -1,0 +1,11 @@
+numpy
+requests==2.22
+Django==3.1
+django-admin-list-filter-dropdown==1.0.2
+social-auth-app-django
+wcmatch
+Pillow
+django-concurrency
+django-cors-headers
+dj_database_url
+pika

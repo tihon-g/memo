@@ -1,0 +1,68 @@
+{% extends "header.html" %}
+{% load static  %}
+
+{% block title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-12">
+      <div class="progress">
+       <div id="progress-scene" class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: 0%"  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+    </div>
+   <div class="col-3">
+   <div class="row">
+      <div class="col-12">
+        <p> Scene details: {{scene.id}} </p>
+      </div>
+   </div>
+  </div>
+  <div class="col-9">
+      <img id="img-scene" src="#">
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript">
+function ajax_get(url, callback) {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            console.log('responseText:' + xmlhttp.responseText);
+            try {
+                var data = JSON.parse(xmlhttp.responseText);
+            } catch(err) {
+                console.log(err.message + " in " + xmlhttp.responseText);
+                return;
+            }
+            callback(data);
+        }
+    };
+
+    xmlhttp.open("GET", url, true);
+    xmlhttp.send();
+}
+</script>
+
+<script type="text/javascript">
+var progress_render = document.getElementById('progress-scene')
+function barsAnim(){
+    ajax_get('/render/activity-scene/{{scene.id}}', function(data) {
+        var cur = parseInt(data["percent"]);
+        if (progress_render){
+            progress_render.setAttribute('aria-valuenow', cur);
+            progress_render.setAttribute('style','width:'+Number(cur)+'%');
+            if (cur==100)
+            document.getElementById('img-scene').src="{% get_media_prefix %}scenes/{{scene.id}}.png";
+        };
+    });
+}
+
+setInterval(barsAnim, 1000);
+</script>
+{% endblock %}
+
+

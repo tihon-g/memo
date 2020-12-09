@@ -1,0 +1,14 @@
+/.idea
+/.docker
+/.envs/
+/renders
+/volumes
+.env
+.*.env.*
+.DS_Store
+*.log
+*.pot
+*.sh
+/rendering/static/
+/rendering/settings.py
+__pycache__/

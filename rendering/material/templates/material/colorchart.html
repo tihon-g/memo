@@ -1,0 +1,35 @@
+{% extends "header.html" %}
+
+{% block content %}
+<h3> {{name}} </h3>
+ {% for m in matches%}
+    <div class="row">
+        <div class="col-3">
+            <div class="card">
+            <div class="card-header">
+                 <small>{{m.finish}}</small>
+             </div>
+            <img src="/static/material/swatches/swatch_{{m.finish.id}}.jpg" class="card-img-top" alt="{{m.texture}}">
+            <div class="card-footer">
+                <small>{{m.suited|length}} suited</small>
+            </div>
+        </div>
+        </div>
+        <div class="col-9">
+            <div class="row">
+            {% for suited in m.suited %}
+            <div class="col-2 p-1">
+                <div class="card">
+            <div class="card-header">
+                <small>{{suited.id}}</small>
+             </div>
+            <img src="/static/material/swatches/swatch_{{suited.id}}.jpg" class="card-img-top" alt="{{suited.id}}">
+
+            </div>
+            </div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endfor %}
+{% endblock %}>

@@ -1,0 +1,18 @@
+{% extends "header.html" %}
+{% load static %}
+{% block content %}
+
+<h3> Material details </h3>
+<p>id: {{m.id}}</p>
+<p>dpi: {{m.dpi}} size:{{m.w}}x{{m.h}} </p>
+<p>metalness: {{m.metalness}}</p>
+<p>roughness: {{m.roughness}}</p>
+<p>url[diffuse]: {{m.url}}</p>
+<p>name: {{m.name}}</p>
+<p>pattern: {{m.pattern}}</p>
+{% if m.pattern.nature.id == 1%}
+<img src="{% static 'material/textures/' %}/{{m.pattern.directory }}/{{m.url}}">
+{% else %}
+<img src="/{{m.url}}">
+{%endif%}
+{% endblock %}

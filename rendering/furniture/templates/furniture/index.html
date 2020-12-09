@@ -1,0 +1,57 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block content %}
+
+{% regroup products|dictsort:"collection" by collection as collection_list %}
+<div class="row" name="collections">
+    <!--div class="col-12">
+        <div class="alert alert-primary" role="alert"><a href="{% url 'furniture:index' %}" class="btn btn-primary">Collections</a></div>
+    </div-->
+    <div class="col-12 m-1 p-1">
+        <div class="card-group">
+         {% for c in collection_list %}
+            <div class="card text-center p-0">
+                <div class="card-body p-1">
+                 <img src="{% static 'furniture/swatches' %}/{{c.grouper}}.Collection.jpg" class="card-img" alt="{{c.grouper}}">
+                </div>
+                <div class="card-footer">
+                    <div class="nav-item">
+                        <a href="{% url 'furniture:collection' selected_collection=c.grouper %}" class="btn btn-{% if selected_collection == c.grouper %}primary{% else %}secondary{% endif %}">
+                        {{c.grouper}}
+                        </a>
+                        <span class="badge badge-secondary">{{c.list|length}} products </span>
+                    </div>
+                 </div>
+              </div>
+         {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row" name="furnitures">
+    <div class="card-group">
+    {% for f in products %}
+        {% if not selected_collection or f.collection == selected_collection %}
+        <div class="col-sm-6 col-md-4 col-lg-3 col-xl-2">
+          <div class="card text-center">
+            <div class="card-header">
+                 <a href="{% url 'furniture:details' product_id=f.id %}" class="card-link">{{f.name}}</a>
+            </div>
+            <div class="card-body">
+               <img src="{% if f.swatch %}/{{f.swatch}}{%else%}{%static 'furniture/swatches/unknown.jpg'%}{%endif%}" class="card-img-top" alt="{{f.name}}">
+            </div>
+            <div class="card-footer">
+                {% for file in f.model.files %}
+                <small><span class="badge badge-primary">{{file}}</span></small>
+                {% empty  %}
+                <small>only old Rhino model</small>
+                {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}>

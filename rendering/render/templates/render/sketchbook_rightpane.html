@@ -1,0 +1,27 @@
+{% load static %}
+<!-- show suitable renders and nav through them -->
+<div class="card">
+  <div class="card-header">
+      <p class="card-text">Suggested renders: <span id="suggested" class="badge badge-primary">{{match_renders|length}}</span>.
+      Displays  <span id="show-render-badge" class="badge badge-success">{{show_render.k}}</span>
+      </p>
+ </div>
+  <div class="card-body"> <!-- get_media_prefix -->
+    <img src='{% static "webapp/img/any-img.png" %}' class="card-img-top" alt="no any suggested render" id="render-src">
+  </div>
+  <div class="card-footer">
+     <div id="nav-renders" hidden>
+        <div class="d-flex flex-row bd-highlight justify-content-between mb-2" >
+        <div class="p-1 bd-highlight">
+          <span onclick="next_render(-1)" class="badge badge-pill badge-secondary">prev</span>
+        </div>
+        <div class="p-1 flex-grow-1 bd-highlight" >
+         <input name="k" type="range" class="custom-range" min="1" max="{{match_renders|length}}" id="render-current" onchange="update_rendernumberbadge(this.value)"  onchange="update_rendernumberbadge(this.value)" value="1">
+        </div>
+        <div class="p-1 bd-highlight">
+        <span onclick="next_render(1)" class="badge badge-pill badge-secondary">next</span>
+      </div>
+    </div>
+   </div>
+ </div>
+</div>

@@ -1,0 +1,48 @@
+{% extends "header.html" %}
+{% load static %}
+
+{% block content %}
+
+<form method="post" enctype="multipart/form-data">
+   {% csrf_token %}
+   <div class="row">
+    <div class="col-12">
+        <div class="alert alert-success" role="alert">Add meshes to model3d {{model.name}}</div>
+    </div>
+    <div class="card-group">
+      <div class="card text-center">
+        <div class="card-header">  meshes in blend file </div>
+        <div class="card-body" >
+          <ul class="list-group list-group-flush">
+            {% for mesh, mat in meshes_json.items %}
+            <li class="list-group-item">
+              <input class="form-check-input" type="checkbox" name="{{mesh}}" checked>{{mesh}}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="card-footer">
+           <div class="btn-group" role="group" >
+            <button name="save-meshes" class="btn btn-block btn-outline-success" type="submit">Add meshes to model</button>
+            <button name="do-nothing" class="btn btn-block btn-outline-dark" type="submit">Do nothing</button>
+           </div>
+        </div>
+      </div>
+      <div class="card text-center">
+        <div class="card-header">  meshes in the model </div>
+        <div class="card-body" >
+          <ul class="list-group list-group-flush">
+              {% for mesh in meshes %}
+            <li class="list-group-item"> {{mesh.name}} </li>
+              {% endfor %}
+          </ul>
+        </div>
+        <div class="card-footer">
+            <button name="delete-model" class="btn btn-block btn-outline-danger" type="submit">Delete model & meshes</button>
+        </div>
+      </div>
+    </div>
+   </div>
+</form>
+
+{% endblock %}

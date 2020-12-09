@@ -1,0 +1,200 @@
+{% extends "header.html" %}
+{% load static  %}
+
+{% block title %}
+{% endblock %}
+
+{% block content %}
+{% regroup finishes|dictsort:"pattern_id" by pattern_id as patterns_list %}
+<div class="row">
+  <div class="col-4" id="canvas-1">
+   <form id="form-scene" action="" method="POST">{% csrf_token %}
+   <div class="row">
+      <div class="col-4"><input name="camera-pos" id="camera-pos" type="text" hidden></div>
+      <div class="col-4"><input name="camera-lookAt" id="camera-lookat" type="text" hidden></div>
+       <div class="col-4"><input name="camera-fov" id="camera-fov" type="text" hidden></div>
+      <div class="col-12">
+        <p> Scene details: </p>
+      </div>
+      <div class="col-12">
+        <div class="input-group mb-4">
+          <div class="input-group-prepend">
+            <label class="input-group-text" for="scene-hdr-select">HDR</label>
+          </div>
+          <select name="scene-hdr" class="custom-select" id="scene-hdr-select" path="{% static 'furnirure/models/hrdi' %}">
+            <!--option selected>Choose hdr...</option-->
+            <option selected value="">don't use hdr map</option> <!-- todo put hdr into db -->
+              {% for hm in hdrmaps %}
+            <option value="{{hm}}">{{hm}}</option> <!-- todo put hdr into db -->
+              {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-3">
+        <a href="#" class="btn btn-primary" id="scene-load-all">Load all</a>
+      </div>
+      <div class="col-3">
+        <a href="#" class="btn btn-info" id="color-meshes">Random mats</a>
+      </div>
+      <div class="col-3">
+        <a href="#" class="btn btn-secondary" id="scene-reset-view">Reset view</a>
+      </div>
+      <div class="col-3">
+          <a href="#" name="scene-render" class="btn btn-light" id="scene-render" hidden>Make render</a>
+      </div>
+      <div class="col-12">
+        <a href="#" class="btn btn-light" id="scene-models">Scene models</a>
+      </div>
+      <div class="col-12">
+          <div class="progress" id="scene-process-progress" hidden>
+              <!--todo for each model-->
+              <div id="scene-process-progress-bar" class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+      </div>
+      <div class="col-12">
+        <div class="alert alert-light" role="alert" id="scene-process-status" hidden>status</div>
+      </div>
+      <div class="col-12">
+        {# regroup meshes|dictsort:"model_id" by model_id as model_list #}
+        <ul class="nav nav-tabs" id="nav-models">
+        {# for m in model_list #}
+        {% for m in models %}
+           <li class="nav-item">
+                <a class="nav-link {%if forloop.first %}active{%endif%}" data-toggle="tab"
+                   id="nav-model-{{forloop.counter0}}"
+                   aria-controls="panel-{{forloop.counter0}}"
+                   href="#panel-model-{{forloop.counter0}}">
+                   {{m.id}}
+                </a>
+           </li>
+        {% endfor %}
+        </ul>
+      </div>
+      <div class="col-12">
+        <div class="tab-content" id="panel-models">
+        {% for m in models %}
+           <div role="tabpanel" class="tab-pane fade {%if forloop.first %}show active{%endif%}"
+               index="{{forloop.counter0}}" model_id="{{m.id}}" model_name="{{m.name}}"
+               aria-labelledby="nav-model-{{forloop.counter0}}"
+               id="panel-model-{{forloop.counter0}}">
+              <img src="/{{m.swatch}}" height="100">{{m.name}}
+              <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" id="model-{{forloop.counter0}}-loaded">
+                  <label class="form-check-label" for="model-{{forloop.counter0}}-loaded" id="label-model-{{forloop.counter0}}">
+                    Load!
+                  </label>
+              </div>
+              <div class="form-check form-check-inline">
+                  <input name="model-show-{{forloop.counter0}}-{{m.list.0.model.id}}" class="form-check-input" type="checkbox" id="model-{{forloop.counter0}}-show" disabled>
+                  <label class="form-check-label" for="model-{{forloop.counter0}}-show">
+                    show on the scene
+                  </label>
+              </div>
+              <div class="row">
+                <div class="col-12">
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text">Position</span>
+                    </div>
+                    <input name="pos-x-{{forloop.counter0}}" type="text" aria-label="x" class="form-control" placeholder="x(left-right)" id="model-{{forloop.counter0}}-pos-x" disabled>
+                    <input name="pos-y-{{forloop.counter0}}" type="text" aria-label="z" class="form-control" placeholder="(closer-further)" id="model-{{forloop.counter0}}-pos-z" disabled>
+                      <!-- axis z in three js to the screen but i choose it is y axis for interface -->
+                    <button class="btn btn-outline-primary" type="button" id="model-{{forloop.counter0}}-rot-y" disabled>
+                      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
+                      rotate!
+                    </button>
+                    <input name="rot-z-{{forloop.counter0}}" type="text" class="form-control" placeholder="y" id="model-{{forloop.counter0}}-angle" disabled>
+                   </div>
+                </div>
+                <div class="col-12">
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text">Size</span>
+                    </div>
+                    <input type="text" class="form-control" placeholder="width" id="model-{{forloop.counter0}}-size-x" disabled>
+                    <input type="text" class="form-control" placeholder="depth" id="model-{{forloop.counter0}}-size-z" disabled>
+                    <input type="text" class="form-control" placeholder="height" id="model-{{forloop.counter0}}-size-y" disabled>
+                  </div>
+
+                 </div>
+                <div class="col-12">
+                   <h5>Contents</h5>
+               </div>
+              <div class="col-12" id="contents-{{forloop.counter0}}">
+              {% for mesh in m.meshes%} {% if mesh.patterns %}
+                  <div class="d-flex flex-row bd-highlight p-1" >
+                    <div class="input-group" model_id="{{m.grouper}}" mesh="{{mesh.name}}">
+                        <div class="form-check form-check-inline">
+                            <input name="mesh-show-{{forloop.parentloop.counter0}}-{{mesh.name}}" class="form-check-input" type="checkbox" id="model-{{forloop.parentloop.counter0}}-{{forloop.counter0}}-mesh-show" checked>
+                            <label class="form-check-label" for="model-{{forloop.parentloop.counter0}}-{{forloop.counter0}}-mesh-show">{{mesh.name}}</label>
+                        </div>
+                        <select class="custom-select" for="finish-select-{{forloop.parentloop.counter0}}-{{forloop.counter0}}">
+                            {% if mesh.patterns|length == 1%}
+                            <option selected value="{{mesh.patterns.0.id}}">{{mesh.patterns.0.name}}</option>
+                              {% else %}
+                              <option selected value="">pattern...</option>
+                              {% for pat in mesh.patterns %}
+                            <option value="{{pat.id}}">{{pat.name}}</option>
+                              {% endfor %}
+                             {% endif %}
+                        </select>
+                        <select name="finish-{{forloop.parentloop.counter0}}-{{mesh.name}}" class="custom-select" model="{{forloop.parentloop.counter0}}" mesh="{{mesh.name}}" id="finish-select-{{forloop.parentloop.counter0}}-{{forloop.counter0}}">
+                            <option selected value="0">select finish...</option>
+                            {% for finish in mesh.finishes%}
+                            <option pattern_id="{{finish.pattern_id}}"  value="{{finish.id}}">[{{finish.id}}]{{finish.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                  </div>
+              {% endif %} {% endfor %}
+              </div>
+                <div class="col-12">
+                <h5>Animations</h5>
+               </div>
+                <div class="col-12">
+                  <div class="input-group mb-3">
+                   <div class="input-group-prepend">
+                    <label class="input-group-text" for="animation-select-{{forloop.counter0}}">clips</label>
+                   </div>
+                   <select class="custom-select" id="animation-select-{{forloop.counter0}}">
+                    <option selected>Choose clip...</option>
+                    <!--option value="1">glass[0]</option-->
+                   </select>
+                  </div>
+               </div>
+               </div>
+          </div>
+          {% endfor%}
+        </div>
+      </div>
+    </div>
+   </form>
+  </div>
+  <div class="col-8" id="scene-perspective" height="900"></div>
+</div>
+<div class="row" id="finishes" hidden>
+ {% for tx in finishes %}
+  <div
+    tx_id="{{tx.id}}"
+    pattern_id="{{tx.pattern_id}}"
+    {%if tx.color%}color="{{tx.color}}"{%endif%}
+    {%if tx.metalness is not None %}metalness="{{tx.metalness}}"{%endif%}
+    {%if tx.roughness is not None %}roughness="{{tx.roughness}}"{%endif%}
+    {%if tx.transparency%}transparency="{{tx.transparency}}"{%endif%}
+    {%if tx.url%}diffuse="/{{tx.url}}"{%endif%}
+    {%if tx.normal%}normal="/{{tx.normal}}"{%endif%}
+    {%if tx.specular%}specular="/{{tx.specular}}"{%endif%}>{{tx.name}}</div>
+ {% endfor %}
+</div>
+{% endblock %}
+
+{% block head_js %}
+<script type="module" src="{% static 'furniture/js/scene.js' %}"></script>
+{% endblock %}
+
+{% block extra_js%}
+<script type="module">
+ import { init } from '{% static "furniture/js/scene.js" %}';
+ init("scene-perspective"); // , textures_dir, models_dir
+</script>
+{% endblock %}

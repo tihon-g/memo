@@ -1,0 +1,215 @@
+{% extends "header.html" %}
+{% load render_tags %}
+{% load static %}
+{% block content %}
+{% include "./rendering_server.html" %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-success" role="alert">
+                <form method="POST" id="product-select-form">{% csrf_token %}
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Orders for</span>
+                    </div>
+                    <select name='product-select' class="custom-select" id="product-selection" onchange="changeProduct()">
+              {% for prod in products %}
+            <option {%if prod.id == product.id %} selected {%endif%}value="{{prod.id}}">{{ prod.name }}, id#{{prod.id}}</option> <!-- todo put hdr into db -->
+              {% endfor %}
+                </select>
+                    <a href="{% url 'render:product-sketchbook' product_id=product.id %}" role="button" aria-pressed="true" class="btn btn-outline-primary">Product Sketchbook</a>
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!--form method="POST" id="product-orders-form"-->
+    <div class="row">
+      <div class="col-12">
+        <ul class="nav nav-tabs card-header-tabs p-0 m-0">
+        {% for order in product.orders %}
+         <li class="nav-item">
+            <a class="nav-link {%if forloop.first %} active {%endif%}" data-toggle="tab" id="head-tab-{{order.id}}"
+               aria-controls="tab-order-{{order.id}}"
+               href="#tab-order-{{order.id}}">{{order.id}}
+            </a>
+           </li>
+         {% endfor %}
+         <li class="nav-item">
+            <a class="nav-link {%if forloop.first %} active {%endif%}" data-toggle="tab" id="head-tab-new"
+               aria-controls="tab-order-{{order.id}}"
+               href="#tab-order-new"><i class="fa fa-plus-square"></i>
+            </a>
+          </li>
+        </ul>
+        <div class="tab-content" id="orders-content">
+        {% for order in product.orders %}
+         <div role="tabpanel" class="tab-pane fade {%if forloop.first %}show active{%endif%}"
+              aria-labelledby="head-tab-{{order.id}}"
+                id="tab-order-{{order.id}}">
+           <div class="card-group">
+             <div class="card" id="order-{{order.id]}">
+               <div class="card-header">
+                 Order details for product kind: <b>{{order.kind}}</b>
+             </div>
+               <div class="card-body">
+                {{order}}
+             </div>
+               <div class="card-footer">
+               {% if request.user.is_staff %}
+                   {% if order.running is None %} {# idle #}
+                       {% if not order.diskSize %}
+                        <a href="{% url 'admin:render_order_change' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-secondary">Modify</a>
+                       {% endif %}
+                     <a href="{% url 'render:order-run' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-success">Run (queue up)</a>
+                   {% elif order.running == 1 %}
+                     <span class="badge badge-secondary">running:{{order.renders_done}}/{{order.N}}</span>
+                     <a href="{% url 'render:order-stop' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-danger">Stop</a>
+                   {% else %}
+                     <span class="badge badge-secondary">in queue: </span>
+                     <a href="{% url 'render:order-cancel' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-danger">Cancel</a>
+                   {% endif %}
+               {% endif %}
+               {% if not order.diskSize %}
+                 <a href="{% url 'render:order-delete' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-danger">Delete</a>
+               {# else #}
+                 <!--a href="{% url 'render:order-remove-data' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-danger">Delete</a-->
+               {% endif %}
+               {% if order.doneLog.started %}
+                <p class="card-text"><small class="text-muted">started:{{ order.doneLog.started }}, count:{{ order.doneLog.count }}</small></p>
+               {% endif %}
+            </div>
+             </div>
+             <div class="card" id="order-{{order.id]}-data">
+              <div class="card-header">
+                  contents of <b>{{order.rendersPath}}</b> on server
+             </div>
+              <div class="card-body">
+                  {{order.quality}}
+              {% if order.renderDirs %}
+
+                   <ul class="list-group list-group-flush">
+                   {% for state, files_count in order.renderDirs.items %}
+                    <li class="list-group-item">{{ state }}: {{files_count}}</li>
+                   {% endfor %}
+                    </ul>
+                  {% endif %}
+             </div>
+              <div class="card-footer">
+               Order data: {{order.renders|length}} renders, ({{order.diskSize|size_Mb}})
+                {% if order.diskSize %}
+                  {% if order.renders|length %}
+                <a href="{% url 'render:order-sketchbook' pk=order.id %}" role="button" aria-pressed="true" class="btn btn-outline-primary">Order sketchbook</a>
+                <a href="#" data-href="{% url 'render:order-post-data' pk=order.id copy_type='copy' %}" data-toggle="modal" data-target="#confirm-post" role="button" aria-pressed="true" class="btn btn-outline-success">Post order data</a>
+                <div class="modal fade" id="confirm-post" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                Update sketchbook: add files from order
+                            </div>
+                            <div class="modal-body">
+                                <p>{{order.renders|length}} renders </p>
+                                <p>source: {{order.rendersPath}}</p>
+                                <p>destination: {{order.kind.product.rendersPath}} </p>
+                            </div>
+                            <div class="modal-footer">
+                                <a class="btn btn-success btn-ok sym">POST as symlinks</a>
+                                <a class="btn btn-info btn-ok copy">COPY</a>
+                                <a class="btn btn-danger btn-ok move">MOVE</a>
+                                <button type="button" class="btn btn-dark" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <a href="#" data-href="{% url 'render:order-remove-data' pk=order.id %}" data-toggle="modal" data-target="#confirm-delete" role="button" aria-pressed="true" class="btn btn-outline-danger">Remove all data</a>
+                <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                Are you sure to remove all data from this order
+                            </div>
+                            <div class="modal-body">
+                                {{order.renders|length}} + archive renders, Total: ({{order.diskSize|size_Mb}})
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                <a class="btn btn-danger btn-ok">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {%endif%}
+              </div>
+             </div>
+           </div>
+         </div>
+        {%endfor%}
+         <div role="tabpanel" class="tab-pane fade" aria-labelledby="head-tab-new" id="tab-order-new">
+           <form method="POST"> {% csrf_token %}
+             <div class="row">
+                <div class="col-2">
+                    <label for="order-kind">Product kind: </label>
+                </div>
+                <div class="col-10">
+                 <select id="order-kind" class="custom-select" name="kind" onchange="changeKind(this);" >
+                   {% for kind in product.kinds %}
+                    <option value="{{kind.id}}" {%if forloop.first %}selected{%endif%}>{{kind.name}}</option>
+                   {% endfor%}
+                 </select>
+                </div>
+             </div><div class="row">
+                <div class="col-2"><label for="order_rule"> rule: </label>
+                </div>
+                <div class="col-10">
+                 <select id="order_rules" class="custom-select" hidden>
+                   {% for k in product.kinds %}
+                    <option value="{{k.id}}">{{k.ruleTemplate}}</option>
+                   {% endfor%}
+                 </select>
+                 <input id="order_rule" type="text" name="rule" value="{{product.kinds.0.ruleTemplate}}" style="width: 100%">
+                </div>
+             </div><div class="row">
+                <div class="col-2"><label for="order_quality"> quality: </label>
+                </div>
+                <div class="col-10">
+                 <select id="order_quality" class="custom-select" name="quality">
+                   {% for q in qualities %}
+                    <option value="{{q.id}}">{{q}}</option>
+                   {% endfor%}
+                 </select>
+                </div>
+            </div>
+            <button type="submit" name="order-new" class="btn btn-large btn-primary">new order!</button>
+           </form>
+         </div>
+        </div>
+      </div>
+    </div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script type="text/javascript">
+
+$('#confirm-delete').on('show.bs.modal', function(e) {
+    $(this).find('.btn-ok').attr('href', $(e.relatedTarget).data('href'));
+});
+
+$('#confirm-post').on('show.bs.modal', function(e) {
+    ['copy', 'move', 'sym'].forEach(el =>
+        $(this).find(`.btn-ok.${el}`).attr('href', $(e.relatedTarget).data('href').replace('copy', el) )
+    );
+});
+
+function changeProduct(){
+    document.getElementById('product-select-form').submit();
+}
+
+function changeKind(kind_selector){
+    const kind_id = kind_selector.selectedOptions[0].value;
+    rules =  document.getElementById('order_rules');
+    document.getElementById('order_rule').value = rules.querySelector(`option[value='${kind_id}']`).innerHTML;
+}
+</script>
+{% endblock %}

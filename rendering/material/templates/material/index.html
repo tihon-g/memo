@@ -1,0 +1,86 @@
+{% extends "header.html" %}
+
+{% load mat_tags %}
+{% load static %}
+
+{% block content %}
+
+{% if natures %}
+ <div class="col-12 p-1">
+    <div class="card-group">
+     <div class="row row-cols-3 row-cols-md-5 row-cols-lg-9">
+        {% for t in natures%}
+        {% if t.finishes|length %}
+        <div class="col m-1 p-1">
+          <div class="card m-0 p-0">
+            <div class="card-header m-0 p-0">
+               <a href="{% url 'material:index_nature' nature_id=t.id %}" class="btn btn-{% if 'nature' in selected and selected.nature.id == t.id %}primary{% else %}secondary{% endif %}">{{t.name}}</a>
+            </div>
+                <!--img src="{% static 'material/swatches/swatch_p' %}{{t.id}}.jpg" class="card-img-top" alt="t.id"-->
+            <div class="card-body m-1 p-0">
+                <p class="card-text"><small class="text-muted">{{t.finishes|length}} finishes</small></p>
+            </div>
+            <!--div class="card-footer">
+            </div-->
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+     </div>
+    </div>
+  </div>
+{% endif %}
+
+{% if patterns %}
+
+ <div class="col-12">
+     <div class="alert alert-secondary m-1" role="alert">{{patterns|length}} {{selected.nature.name}} patterns: </div>
+</div>
+ <div class="col-12">
+  <div class="card-group" >
+  {% for p in patterns %}
+   <div class="col xs-4 col-sm-3 col-xl-2 p-0">
+      <a href="{% url 'material:index_pattern' pattern_id=p.id %}">
+       <div class="card text-center border-light" >
+
+        <div class="card-body">
+            <img src="{% static 'material/swatches/swatch_p' %}{{p.id}}.jpg" class="card-img-top" alt="{{p.id}}">
+            {#p.url#}
+            {{p.name|spaces}}
+        </div>
+
+       </div>
+      </a>
+   </div>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if finishes  %}
+ <div class="col-12">
+     <div class="alert alert-secondary m-1" role="alert">finishes: {{finishes|length}}</div>
+ </div>
+ <div class="col-12">
+        <div class="card-group">
+        {% for t in finishes %}
+        <div class="col xs-3 col-sm-2 col-xl-1 p-0">
+
+            <div class="card border-light">
+
+            <div class="card-body">
+                <a href="{% url 'material:finish-details' pk=t.id %}"><img src="{% static 'material/swatches/swatch_' %}{{t.id}}.jpg" class="card-img-top" alt="{{t.id}}"></a>
+            </div>
+             <div class="card-footer">
+                 <p class="card-text"><small class="text-muted">{{t.id}}</small></p>
+             </div>
+        </div>
+        </div>
+        {% endfor %}
+
+    </div>
+    </div>
+{% endif %}
+
+</div>
+{% endblock %}>

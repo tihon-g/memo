@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  rabbit:
+    container_name: rabbit
+    image: rabbitmq:3-management-alpine
+    env_file: .env
+    volumes:
+      - ./.docker/rabbitmq/etc/:/etc/rabbitmq/
+      - ./.docker/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./.docker/rabbitmq/logs/:/var/log/rabbitmq/
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    #command: rabbitmq-plugins enable rabbitmq_management
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - "10080:80"
+      - "10443:443"
+    # монтируем директории, слева директории на основной машине, справа - куда они монтируются в контейнере
+    volumes:
+      #- ./nginx:/etc/nginx/conf.d
+      - ./rendering:/usr/local/rendering
+      #- ./logs:/var/log/nginx
+      #- ./rendering/static:/static
+    links:
+      - web
+    command: [ "nginx", "-g", "daemon off;" ]
+
+  web:
+    container_name: web
+    build: rendering/
+    env_file: .env
+    #image: 53daead0a518
+    #command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - type: volume
+        source: renders
+        target: /renders
+        volume:
+          nocopy: true
+      - type: bind
+        source: ./rendering
+        target: /usr/local/rendering
+#      - ./rendering/static:/static
+#      - ./rendering:/rendering
+#      - ./rendering/static_cdn:/static
+#      - models:./rendering/furniture/static/furniture/models/blender
+#      - materials:./rendering/material/static/material/finishes
+    ports:
+      - 8000:8000
+    #user: nobody
+    environment:
+      DEBUG: 1
+
+#  db:
+#    container_name: db
+#    image: postgres:12
+
+  blender:
+    container_name: blender
+    env_file: .env
+#    environment:
+#      - RABBIT_USER: ${RABBIT_USER}
+#      - RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+#      - RABBIT_HOST: ${RABBIT_HOST}
+#      - RABBIT_PORT: ${RABBIT_PORT}
+    #image: f9173c0b56cb
+    build: blender/
+    volumes:
+      - type: bind
+        source: ./rendering
+        target: /usr/local/rendering
+#      - type: bind
+#        source: ./rendering/furniture/static/furniture/models/blender
+#        target: /usr/local/models
+#      - type: bind
+#        source: ./rendering/material/static/material/finishes
+#        target: /usr/local/materials
+      - type: volume
+        source: renders
+        target: /usr/local/renders
+        volume:
+          nocopy: true
+    depends_on:
+      - rabbit
+#    - renders: /renders
+#    - models: /models
+#    - materials: /materials
+
+#  nginx:
+#    container_name: nginx
+#    image: nginx
+#    ports:
+#      - 80:80
+#    links:
+#      - web
+
+    # CMD [ "nginx", "-g", "daemon off;" ]
+  # docker run -d -P nginx
+
+  #docker network create dev
+  #networks:
+
+volumes:
+  renders:
+        #type: volume
+        #device: /Users/tihon/PycharmProjects/memo/renders
+      #o: bind
+        # can put renders outside compose
+        # external: true
+#        type: none
+#        device: /Users/tihon/PycharmProjects/memo/renders
+#        o: bind
+#    models:
+#    materials:
+
+#You still need to grant access to the secrets to each service in the stack.
+#  secrets:
+#    my_first_secret:
+#      file: ./secret_data
+#    my_second_secret:
+#      external: true
+#      name: redis_secret
+
+#    - ./renders:/renders
+#    - ./rendering/furniture/static/furniture/models/blender:/models:ro
+#    - ./rendering/material/static/material/finishes:/materials:ro
+#    #image: blendergrid/blender:2.82a
+
+  # Managing hosts with Docker Machine
+  # Docker Machine is a tool to provision and manage Docker hosts.
+
+  # It automates the creation of a virtual machine:
+    # locally, with a tool like VirtualBox or VMware;
+    # on a public cloud like AWS EC2, Azure, Digital Ocean, GCP, etc.;
+    # on a private cloud like OpenStack.
+
+  # It can also configure existing machines through an SSH connection.
+  # It can manage as many hosts as you want, with as many "drivers" as you want.

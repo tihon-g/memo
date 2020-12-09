@@ -1,0 +1,73 @@
+{% extends 'header.html' %}
+{% load static %}
+{% load product_tags %}
+{% load render_tags %}
+
+{% block content %}
+
+<form action="{% url 'render:product-sketchbook' product_id=product.id %}" method="POST" name="productsketchbook">
+ {% csrf_token %}
+ <div class="row">
+   <div class="col-12 col-md-6">
+     <div class="row">
+         <div class="col-9" style="display:">
+           {% if product.kinds|length > 1 %}
+           <span>Select kind of product:</span>
+           {%else%}
+           <span>Only one kind of product:</span>
+           {%endif%}
+           <select id="kind-selector" class="custom-select" onchange="changeProductKind()">
+            {% for kind in product.kinds %}
+              <option {% if forloop.first %} selected {% endif %} kind="{{kind.id}}" value="{{kind.name}}">{{kind.name}}</option>
+            {% endfor %}
+           </select>
+        <button type="button" class="btn btn-outline-info btn-sm order p-1 m-2" onclick="order()">Order <span id="order-variants"></span> variants</button>
+          <label class="checkbox" for="check-posting-{{q.id}}"><small>
+            <input type="checkbox" id="check-posting-{{q.id}}" onclick="changePosting(this);">posting after production<span class="posted {{q.id}}"></span>
+          </small></label>
+         </div>
+         <div class="col-3">
+             <p>Product renders:<span id="renders-product-count">{{product.renders|length}}</span></p>
+             <p>renders:<span id="renders-count"></span></p>
+             <p>variants:<span id="variants-count"></span></p>
+         </div>
+         <div class="col-12">
+             <small><span class="order kind"></span>|<span class="order parts"></span></small>
+             <div class="progress">
+               <div id="progress-current-render" class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+             </div>
+         </div>
+     </div>
+     {% for kind_id, parts in kind_parts.items %}
+     <div id="kind-{{kind_id}}" style="display:none">
+      {% include "sketchbook_leftpane.html" with parts=parts %}
+     </div>
+     {% endfor %}
+   </div>
+   <div class="col-12 col-md-6">
+    {% include "sketchbook_rightpane.html" %}
+   </div>
+ </div>
+</form>
+
+ <!-- this data needs to js code on scketbook user interactions -->
+<div class="invisible" height="0" id="render-images" product="{{product.id}}" hidden>
+     <div id="patterns">
+      {# regroup finishes|dictsort:"pattern_id" by pattern_id as patterns_list #}
+        {% for pat in product.patterns %}
+         <div pattern_id="{{pat.id}}">{{pat.finishes|join_ids:','}}</div>
+        {% endfor %}
+     </div>
+     <div id="media-root" mediaurl="{% get_media_prefix %}" swatches_root="{% static 'material/swatches/swatch_'%}" web_img="{% static 'webapp/img/' %}"></div>
+     <div id="orders-data">
+      {% for o in orders %}
+         <div order_id="{{o.id}}" kind_id="{{o.kind.id}}"></div>
+      {% endfor%}
+      </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript" src="{% static 'webapp/js/get_ajax.js'%}"></script>
+<script type="text/javascript" src="{% static 'render/js/sketchbook.js'%}"></script>
+{% endblock %}

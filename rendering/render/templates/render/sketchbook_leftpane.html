@@ -1,0 +1,42 @@
+{% load static %}
+{% for conf in parts %}
+<!-- select materials -->
+<div class="row part p-1 {% if conf.colorChart %}colorchart{%endif%} {% if conf.optional %} optional {% endif %}" part="{{conf.part.id}}">
+   <div class="col-12 p-1">
+     <div class="alert alert-success p-1 m-1" role="alert">
+       <input type="checkbox" onclick="checkPart();" checked {% if not conf.optional %} disabled {% endif %}/>
+         <b><span class="partname">{{conf.part.name}}</span></b> ({{conf.part.natures|join:", "}})
+     </div>
+   </div>
+   <div class="col-9 p-1">
+       <span>meshes: </span>
+       <small>
+           {% for mesh in conf.part.meshes.all %}{% if not forloop.first %}, {%endif%}<span class="mesh">{{mesh}}</span>{%endfor%}
+       </small>
+   </div>
+   <div class="col-3 p-1 text-center"><small><span class="finishes-selected">{{conf.finishes|length}}</span></small>/{{conf.finishes|length}}{% if conf.optional %}+1{% endif %}</div>
+   <div class="col-9 p-1">
+
+       <select class="custom-select pattern" onchange="changePattern()">
+       {% if conf.patterns|length == 1 %}
+         <option selected value="{{conf.patterns.0.id}}">{{conf.patterns.0.name}}</option>
+       {% else %}
+         <option selected value="-1">any</option>
+         {% for pat in conf.patterns %}
+         <option value="{{pat.id}}">{{pat.name}}</option>
+         {% endfor %}
+       {% endif %}
+      </select>
+      <select class="custom-select finish" onchange="changeFinish()">
+        <option selected value="-1">any</option>
+        <!--option value="0">none</option-->
+        {% for finish in conf.finishes %}
+        <option pattern_id="{{finish.pattern.id}}" value="{{finish.id}}">{{finish}}</option>
+        {% endfor %}
+      </select>
+   </div>
+   <div class="col-3 p-1">
+      <img class="img-fluid img-thumbnail w-100" src='{% if conf.patterns|length == 1 %} {{conf.patterns.0.swatch_src}} {% else %} {% static "webapp/img/any-img.png" %} {% endif %}' style="cursor:pointer" onclick="swatch_click({{conf.part.id}})">
+   </div>
+</div>
+{% endfor %}

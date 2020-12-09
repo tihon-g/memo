@@ -1,0 +1,146 @@
+{% extends "header.html" %}
+{% load static %}
+{% load render_tags %}
+{% block content %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="row">
+    <div class="col-12">
+        <div class="alert alert-success" role="alert">Source of perfect realistic images is a model. 3D model. We use three.js engine and gltf models for online demo and Blender for rendering</div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="card text-center">
+        <div class="card-header">
+          <div class="row">
+            <div class="col-12">
+              {% if product.model %}
+                <p> 3D Model: {{product.model.name}} </p>
+              {% else %} <p> No any 3D model connected to this Product.<p>
+                <a href="{% url 'admin:furniture_product_change' object_id=product.id %}" role="button" aria-pressed="true" class="btn btn-outline-primary">choose existing</a> or
+                <a href="{% url 'admin:furniture_model3d_add' %}" role="button" aria-pressed="true" class="btn btn-outline-primary">create new one</a>
+              {% endif %}
+            </div>
+            <div class="col-6">
+              {% if product.model.glb %}
+                <div class="alert alert-success" role="alert">GLTF (three.js)<i class="fa fa-check" aria-hidden="true"></i></div>
+              {% else %}
+                <input type="file" name="gltf">
+                <button type="submit">upload</button>
+              {% endif %}
+            </div>
+            <div class="col-6">
+                {% if product.model.blend %}
+                <div class="alert alert-success" role="alert">Blender model <i class="fa fa-check" aria-hidden="true"></i></div>
+                {% else %}
+                    <input type="file" name="blend">
+                    <button type="submit">Upload .blend</button>
+                {% endif %}
+            </div>
+          </div>
+         </div>
+        <div class="card-body" >
+          <div class="col-12 px-0" id="gltf" height="200"></div>
+          <p> meshes: {{product.model.meshes|join_names:", "}}</p>
+        </div>
+        <div class="card-footer">
+           {% if product.model.blend %}
+            <p class="card-text"><small class="text-muted">You can make any renders without producer restrictions, combine materilas as you wish</small></p>
+            <a href="#{# url 'render:model-sketchbook' model_id=product.model.id #}" role="button" aria-pressed="true" class="btn btn-outline-primary">Model Sketchbook(under construction...)</a>
+           {% else %}
+              <small class="text-muted">Upload blend file for rendering</small>
+           {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="card">
+         <div class="card-header">
+           {{product}}
+         </div>
+         <div class="card-body">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">parts: {{ product.partNames|join:", " }}</li>
+            </ul>
+
+            {% for v in kinds %}
+            <div class="alert alert-success p-1 m-1" role="alert">Structure of kind: {{v.name}}</div>
+            <div class="row border p-1 m-1">
+            <div class="col-3 border align-self-stretch text-center">
+                <b>Part Name</b>
+            </div>
+            <div class="col-3 border align-self-stretch text-center">
+                <b>Meshes</b>
+            </div>
+            <div class="col-3 border align-self-stretch text-center">
+                <b>materials</b>
+            </div>
+            <div class="col border align-self-stretch text-center">
+                <b>limitations</b>
+            </div>
+            {% for p in v.parts.all %}
+            <div class="col-3 border align-self-stretch text-center">
+                {{p.name}}
+            </div>
+            <div class="col-3 border align-self-stretch text-center">
+                {{p.meshes.all|join_names:", "}}
+            </div>
+            <div class="col-3 border align-self-stretch text-center">
+                {{p.cover.all|join_names:", "}}
+            </div>
+            <div class="col-3 border align-self-stretch text-center">
+                {% if p.limitations|length %}
+                {{p.limitations|join:", "}}
+                {% else%}
+                -
+                {% endif %}
+            </div>
+            {%endfor%}
+        </div>
+            <div class="alert alert-dark" role="alert"><span class="badge badge-success">order string:</span>{{v.renderOrder}}</div>
+            {% endfor %}
+         </div>
+         <div class="card-footer">
+             <p class="card-text"><small class="text-muted">ready & not posted renders: {{ product.rendersInOrders|length }} </small></p>
+             <p class="card-text"><small class="text-muted">posted renders: {{ product.renders|length }} </small>
+               {% if product.renders|length %}
+                 <a href="{% url 'render:product-sketchbook' product_id=product.id %}" role="button" aria-pressed="true" class="btn btn-outline-primary">Product Sketchbook</a>
+               {% else %}
+                 {% if product.model.blend %}
+                   {% for v in kinds %}
+                 <!--a href="{# url 'render:productkind-order' product.id v.id #}" role="button" aria-pressed="true" class="btn btn-outline-primary">render {{v.name}}</a-->
+                 {% if v.renderOrders %}
+                 <a href="{% url 'render:order-run' v.product.model.id v.renderOrders.0.id %}" role="button" aria-pressed="true" class="btn btn-outline-primary">Run order[{{v.renderOrders.0.id}}] for rendering {{v.name}} </a>
+                 {% else%}
+                 <a href="{% url 'admin:render_order_add' %}" role="button" aria-pressed="true" class="btn btn-outline-primary">create new render order for {{v.name}}</a>
+                 {% endif %}
+                   {% endfor%}
+                 {% else %}
+                 <small class="text-muted"><- Upload blend file for rendering</small>
+                 {% endif %}
+               {% endif %}
+             </p>
+              <p class="card-text"><small class="text-muted">posted renders: {{ request.session.posted|dict_get:product.id }}</small>
+               {% if product.external_url and request.session.posted|dict_get:product.id %}  {{ product.external_url }} {% endif %}
+             </p>
+         </div>
+       </div>
+    </div>
+</div>
+</form>
+
+{% endblock %}
+
+{% block head_js %}
+<!--script type="module" src="{% static 'furniture/js/3.js' %}"></script-->
+{% endblock %}
+
+{% block extra_js %}
+{% if product.model.glb %}
+<script type="module" src="{% static 'furniture/js/furniture-details.js' %}"></script>
+<script type="module">
+    import { init } from '{% static "furniture/js/furniture-details.js" %}';
+    init('/{{product.model.glb}}');
+</script>
+{% endif %}
+{% endblock %}
