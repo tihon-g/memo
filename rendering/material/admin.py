@@ -24,6 +24,19 @@ class TypeAdmin(admin.ModelAdmin):
 
 @admin.register(Pattern)
 class PatternAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'squ', 'nature',)
+        }),
+        ('Author options', {
+            'classes': ('collapse',),
+            'fields': ('web', 'design', 'by', 'copyrights'),
+        }),
+        ('Admin options', {
+            'classes': ('collapse',),
+            'fields': ('maps', 'features', 'tile', ),
+        }),
+    )
 
     search_fields = ['name', ]
     list_display = ('name', 'vendor', 'nature', 'swatch_link')
@@ -37,18 +50,12 @@ class PatternAdmin(admin.ModelAdmin):
 class TextureAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': ('name', 'squ', 'archive') # 'pattern',
+            'fields': ('squ', 'pattern', 'archive', 'name')
         }),
-
-        # ('reflection options', {
-        #     'classes': ('collapse',),
-        #     'fields': ('metalness', 'roughness', 'transparency',),
-        # }),
-        #
-        # ('maps options', {
-        #     'classes': ('collapse',),
-        #     'fields': (('w', 'h', 'dpi'), 'url', 'normal',  'specular'),
-        # }),
+        ('Admin options', {
+            'classes': ('collapse',),
+            'fields': ('features', 'tile', ),
+        }),
     )
 
     list_display = ('id', 'name', 'squ', 'pattern_link', 'swatch_link', 'archive',)
