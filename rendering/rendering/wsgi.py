@@ -15,5 +15,5 @@ load_dotenv(dotenv_path=env_path)
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rendering.settings')
-
+print('start wsgi')
 application = get_wsgi_application()

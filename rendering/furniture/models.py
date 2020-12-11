@@ -400,6 +400,7 @@ class ProductKind(models.Model):
         data['id'] = self.pk
         data['name'] = self.name
         data['configuration'] = [ {"part": c.part.name,
+                                   "defaultfinish": c.defaultFinish_id,
                                    #todo add GUI displayname
                                    "optional": c.optional,
                                    "limited": c.limitation_id,
@@ -407,7 +408,7 @@ class ProductKind(models.Model):
                                    "covered": list(c.part.cover.all().values_list('name', flat=True)),
                                    "finishes": [f.id for f in c.finishes]}
                   for c in Configuration.objects.filter(kind=self.pk).order_by('id')]
-        data['render-template'] = 'config=' + '-'.join([ d["part"] + ":{}" for d in data['configuration'] if not d['colorchart']])
+        #data['render-template'] = 'config=' + '-'.join([ d["part"] + ":{}" for d in data['configuration'] if not d['colorchart']])
         return data #json.dumps(data, sort_keys=True, indent=4))
 
 
@@ -466,7 +467,8 @@ class ProductKind(models.Model):
                             return f"finish {finish.id} from pattern {pattern.id} not suited on limitation {c.limitation} for part {part}. USE one of {[f.id for f in c.finishes]}"
             ## all is OK, calc filename!
             meshes_str = '_'.join([f"{mesh.name}-" + (f"{conf[parts[mesh.name]]}" if mesh.name in parts else "0") for mesh in self.product.model.meshes])
-            return {"file": f"{self.product.model.name}={meshes_str}.jpg"} #? png
+            return {"file": f"{self.product.model.name}={meshes_str}"}  # without .jpg/ .png
+        # .png
         except Exception as err:
             print(repr(err))
             raise err

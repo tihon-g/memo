@@ -1,5 +1,6 @@
 import json
 import os
+from wcmatch import pathlib
 
 import pika
 #from django.views.decorators.csrf import csrf_protect
@@ -12,7 +13,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.static import serve
 from furniture.models import Model3D, Product, ProductKind, Limitation
-from material.models import Pattern, Nature, ColorMatchingChart, ColorMatch
+from material.models import Finish, Pattern, Nature, ColorMatchingChart, ColorMatch
 from render.models import Order, Quality, Machine
 
 from .forms import CreateUserForm, LoginUserForm
@@ -111,6 +112,9 @@ def logoutPage(request):
     logout(request)
     return redirect('homepage')
 
+################################### API ##################################
+# https://webdevblog.ru/sozdanie-django-api-ispolzuya-django-rest-framework-apiview/
+# but i am not using it
 
 def api_model_index(request):
     return JsonResponse({"models": [m.api_info for m in list(Model3D.objects.exclude(blend__isnull=True).order_by('id'))]}, status=200)
@@ -121,8 +125,20 @@ def api_product_index(request):
                                     values('id', 'name', 'product_code', 'collection', 'type', 'model_id'))
                          }, status=200)
 
+
 def api_product_kinds(request, product_id):
     return JsonResponse({"styles": [kind.api_info for kind in ProductKind.objects.filter(product=product_id)]}, status=200)
+
+
+def api_product_kind_details(request, product_id, kind_id):
+    try:
+        kind = ProductKind.objects.get(pk=kind_id)
+        if kind.product_id != product_id:
+            return JsonResponse({"error": f"Product {product_id} don't have style with id={kind_id}"}, status=400)
+        return JsonResponse(kind.api_info, status=200)
+    except:
+        return JsonResponse({"error": f"there is no style with id={kind_id}"}, status=400)
+
 
 def api_pattern_index(request):
     data = {}
@@ -156,61 +172,69 @@ def api_pattern_details(request, pattern_id):
 #         return JsonResponse({"error": f"use config {prod.config}"})
 
 
-def api_get_render(request, kind_id, rule):  #todo must pass quality here
+def api_get_render(request):  #todo must pass quality here
+    if request.method != 'GET':
+        return JsonResponse('only GET method supported', safe=False, status=500)
+    # kind == style
+    if 'style' not in request.GET:
+        return JsonResponse('must specify product style', safe=False, status=400)
     kind = None
     try:
-        kind = ProductKind.objects.get(pk=kind_id)
+        kind = ProductKind.objects.get(pk=request.GET['style'])
     except:
-        return JsonResponse({"error": f"there is no kind with id {kind_id}"})
+        return JsonResponse({"error": f"there is no style with id {request.GET['style']}"})
 
-    if rule[:7] != 'config=':
-        return JsonResponse({"error": f"pls use template: {kind.renderOrderTemplate}"})
-    # get quality
-    quality_id = 1
-    try:
-        if os.getenv('QUALITY'):
-            quality_id = int(os.getenv('QUALITY'))
-        elif settings.RENDER_MACHINE['QUALITY']:
-            quality_id = int(settings.RENDER_MACHINE['QUALITY'])
-        q = Quality.objects.get(pk=quality_id)
-    except:
-        q = Quality.objects.get(pk=1)
+    # quality
+    q = None
+    if 'quality' in request.GET:
+        try:
+            q = Quality.objects.get(pk=request.GET['quality'])
+        except:
+            return JsonResponse('there is no such quality', safe=False, status=400)
 
-    res = kind.parse_rules(rule[7:].split('-'), 1)  # only config parsing
+    # config
+    if 'config' not in request.GET:
+        return JsonResponse('must specify config', safe=False, status=400)
+
+    res = kind.parse_rules(request.GET['config'].split('-'), 1)  # only config parsing
     if "error" in res:
         return JsonResponse(res, status=400)
     if "file" in res:
-        file_path = os.path.join( str(kind.product.model.id), str(q.id), res["file"])
-        media = os.path.join(settings.MEDIA_ROOT, file_path) #jpg/png
-        if os.path.exists(media):
+        if q:
+            file_path = os.path.join(str(kind.product.model.id), str(q.id), f"{res['file']}.{q.ext}")
+            media = os.path.join(settings.MEDIA_ROOT, file_path) #jpg/png
+            if os.path.exists(media):
             #media_url = os.path.join('/', settings.X_ACCEL_REDIRECT_PREFIX, file_path)  # os.path.join(settings.MEDIA_URL, file_path)
-            return serve(request, file_path, settings.MEDIA_ROOT)
-        #media_url = do.url(file_path)
-        #if media_url:
-            # if settings.USE_X_ACCEL_REDIRECT:
-            #     response = HttpResponse('')
-            #     response['X-Accel-Redirect'] = media_url
-            #     response['Content-Type'] = 'image/png'
-            # else:
-            #     response = serve(request, file_path, settings.MEDIA_ROOT)
-            # return response
-        #    return render(request, 'webapp/render.html', {"url": media_url})
-        #else:
-        o_rule = rule.split('=')[1].replace('-', ';')
+                return serve(request, file_path, settings.MEDIA_ROOT)
+        else:
+            product_root = pathlib.Path(os.path.join(settings.MEDIA_ROOT, str(kind.product.model.id)))
+            wild = f"*/{res['file']}" + ".{jpg,png}"
+            filtered = list(product_root.glob(wild, flags=pathlib.BRACE))
+            if filtered:
+                # first one
+                return serve(request, os.path.relpath(filtered[0], settings.MEDIA_ROOT), settings.MEDIA_ROOT)
+        # need to render
+        o_rule = request.GET['config'].replace('-', ';')
         # create new order
         try:
-            order = Order.objects.filter(kind=kind_id).filter(running__isnull=False).get(rule=o_rule)
+            order = Order.objects.filter(kind=kind).filter(running__isnull=False).get(rule=o_rule)  # double click
+            # if i have the same order in queue or running
         except:
             order = Order()
-            order.kind_id = kind_id
+            order.kind_id = kind.id
             order.rule = o_rule
-            order.quality_id = quality_id
+            try:
+                order.quality_id = Quality.objectsget(pk=int(os.getenv('QUALITY'))).id
+            except:
+                order.quality_id = 1
+            # todo put it (calc path) in the model
+        file_path = os.path.join(str(kind.product.model.id), str(order.quality.id), f"{res['file']}.{order.quality.ext}")
 
         status = order.run()
         if status == 'ok':
             return render(request, 'webapp/render.html', {"order": order, "file_path": file_path})
         else:
-            return JsonResponse(status, safe=False, status=500)
+            return JsonResponse({"mqtt error": status}, safe=False, status=500)
 
     return JsonResponse(res, safe=False, status=500)
 
@@ -232,5 +256,10 @@ def api_colorcharts(request):
         res[ch.id] = [{'match': m.finish.id, 'suited': m.suited} for m in ColorMatch.objects.filter(chart=ch.id)]
     return JsonResponse(res, status=200)
 
+def api_get_finish(request, finish_id):
+    return serve(request, Finish.objects.get(pk=finish_id).diffuse_relpath, settings.STATIC_ROOT)
 
-# https://webdevblog.ru/sozdanie-django-api-ispolzuya-django-rest-framework-apiview/
+def api_quality_index(request):
+    return JsonResponse({"qualities": list(Quality.objects.order_by('id').
+                                    values('id', 'size_x', 'size_y', 'ext', 'compression'))
+                         }, status=200)

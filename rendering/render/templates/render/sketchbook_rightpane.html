@@ -16,7 +16,7 @@
           <span onclick="next_render(-1)" class="badge badge-pill badge-secondary">prev</span>
         </div>
         <div class="p-1 flex-grow-1 bd-highlight" >
-         <input name="k" type="range" class="custom-range" min="1" max="{{match_renders|length}}" id="render-current" onchange="update_rendernumberbadge(this.value)"  onchange="update_rendernumberbadge(this.value)" value="1">
+         <input name="k" type="range" class="custom-range" min="1" max="{{match_renders|length}}" id="render-current" onchange="show_render(this.value)" value="1">
         </div>
         <div class="p-1 bd-highlight">
         <span onclick="next_render(1)" class="badge badge-pill badge-secondary">next</span>

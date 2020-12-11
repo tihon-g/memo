@@ -182,9 +182,13 @@ class Finish(models.Model):
         return ""
         # roughness value in features
 
+    @property
+    def diffuse_relpath(self):
+        return f"material/finishes/{self.pattern_id}/{self.diffuse}"
+
     def get_absolute_url(self):
-        #return reverse('material.views.pattern_details', args=[self.pk])
-        return mark_safe(u'<a href="/material/finish/{}">{}</a>'.format(self.pk, self.name))
+        return mark_safe(u'<a href="static/{}">{}:{}</a>'.format(self.diffuse_relpath, self.squ, self.name))
+
 
     # now I prefer store swatches in static files. not in db
     def swatch_link(self): ## swatch
@@ -194,12 +198,9 @@ class Finish(models.Model):
     swatch_link.short_description = "swatch"
 
     def image_link(self): ## swatch
-        if self.pattern.type.id==1:
-            return mark_safe(u'<a href="{0}" target="_blank"><img src="{0}" width="100"/></a>'.
-                             format(f"/static/material/textures/{self.pattern.directory}/{self.url}"))
-        else:
-            return mark_safe(u'<a href="{0}" target="_blank"><img src="{0}" width="100"/></a>'.
-                             format(self.url))
+        return mark_safe(u'<a href="{0}" target="_blank"><img src="{0}" width="100"/></a>'.
+                             format(f"/static/{self.diffuse_relpath}"))
+
 
     def pattern_link(self):
         return self.pattern.get_absolute_url()
@@ -214,7 +215,9 @@ class Finish(models.Model):
         if self.name:
             return f"[{self.id}] {self.name}"
         else:
-            return f"[{self.id}] {self.url.replace('_tile.jpg','')}"
+            return f"[{self.id}] {self.pattern.name}:{self.squ}"
+
+    #return f"[{self.id}] {self.url.replace('_tile.jpg','')}"
 
 
 class ColorMatchingChart(models.Model):

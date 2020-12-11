@@ -6,10 +6,12 @@ var selected = {};
 var dict_tx = {}; // dict_tx[tx] = pattern_id
 var dict_pt = {}; // dict_pt[pattern_id] = [list textures]
 var render_indices = [];
+var render_index=0;
 var order_url = '';
 //var orders;
 var parts = {};
 var kind;
+const media = document.getElementById('media-root').getAttribute('mediaurl');
 const anyImg = document.getElementById('media-root').getAttribute("web_img")+'any-img.png';
 
 var root;
@@ -149,32 +151,25 @@ function changeFinish(){
     calc_matches();
 }
 
-function update_rendernumberbadge(val) {
+function show_render(val) {
     var src;
-    if (val < render_indices.length){  //render_indices.length>0
-        document.getElementById('show-render-badge').innerHTML=parseInt(val)+1;
-        src = document.getElementById('media-root').getAttribute('mediaurl') + render_names[val]; //document.getElementById('render-' + render_indices[val]).innerHTML;}
-    } else { //render_indices.length==0
+    render_index = parseInt(val)-1;
+    if (render_index < render_indices.length){
+        document.getElementById('show-render-badge').innerHTML=val;
+        document.getElementById('render-current').value=val;
+        src = media + render_names[render_indices[render_index]];
+    } else {
         document.getElementById('show-render-badge').innerHTML='nothing';
         src = '/static/render/img/blender-logo.jpg';
-        //document.getElementById("btn-render-order").setAttribute("name", 'order-' + order_params());
     }
-    //console.log(order_params());
-    //navigation
-    //document.getElementById('nav-renders').setAttribute('hidden', (render_indices.length < 2));
-    //document.getElementById('nav-renders-0').hidden = render_indices.length;
     document.getElementById('nav-renders').hidden = (render_indices.length < 2);
     document.getElementById('render-src').setAttribute('src', src);
 }
 
-function next_render(step)
-{
-    let N = parseInt(document.getElementById('suggested').innerHTML);
+function next_render(step){//step = +1/-1
+    let N = render_indices.length;
     if (N<2) return;
-    let val = parseInt(document.getElementById('show-render-badge').innerHTML)-1;
-    val = (val+parseInt(step)+N) % N;
-    document.getElementById('render-current').value = parseInt(val)+1;
-    update_rendernumberbadge(val);
+    show_render( ((render_index + parseInt(step) + N) % N)+1 );
 }
 
 function calc_matches(){
@@ -218,8 +213,6 @@ function calc_matches(){
     // count renders
     render_indices = [];
     render_names.forEach((f,i) => {
-        //if (f.split('|')[1].split('_').every(pm => {
-        //render_names = data.renders.map( el => `${el.split('/')[1]}|${el.split('=')[1].split('.')[0]}`);
         if (f.split('=')[1].split('.')[0].split('_').every(pm => {
             x = pm.split('-');
             let mesh=x[0];
@@ -229,14 +222,13 @@ function calc_matches(){
             if (!order[mesh].startsWith('p')) return (mat == order[mesh]);
             // check pattern
             return (dict_tx[mat]==order[mesh].substring(1))
-        })) render_indices.push(i+1);
+        })) render_indices.push(i);
     });
     const renders = render_indices.length;
     document.querySelector('#renders-count').innerHTML=renders;
     document.getElementById('suggested').innerHTML = renders;
     document.getElementById('render-current').setAttribute('max', renders);
-    document.getElementById('render-current').value = 1;
-    update_rendernumberbadge(0);
+    show_render(1);
 }
 
 function getCookie(name) {

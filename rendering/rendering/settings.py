@@ -2,9 +2,6 @@ DEFAULT_CHARSET = 'utf-8'
 import os
 import dj_database_url
 
-# load_dotenv does not override existing System environment variables.
-# To override, pass override=True to load_dotenv().
-
 DEBUG = os.getenv("DEBUG", default="False") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY")
 
@@ -14,13 +11,21 @@ ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1 localhost").split("
 print(f'django settings: DEBUG={DEBUG}')
 
 CORS_ORIGIN_ALLOW_ALL = True
-CORS_ORIGIN_WHITELIST = [
-    'https://localhost:8000',
-    'https://127.0.0.1:8000',
-]
+
 if os.getenv('SERVER'):
-    CORS_ORIGIN_WHITELIST.append(f"https://{os.getenv('SERVER')}")
     ALLOWED_HOSTS.append(os.getenv('SERVER'))
+    CORS_ORIGIN_WHITELIST = [
+        f"https://{os.getenv('SERVER')}",
+        'https://127.0.0.1:8000',
+    ]
+    ALLOWED_HOSTS.append(os.getenv('SERVER'))
+else:
+    CORS_ORIGIN_WHITELIST = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'https://localhost:8000',
+        'https://127.0.0.1:8000',
+    ]
 
 # Application definition
 INSTALLED_APPS = [
@@ -142,11 +147,13 @@ EMAIL_PORT = 587
 LOGIN_URL = '/login/'
 
 # SSL/https/redirect/CSRF
-SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
-CSRF_COOKIE_HTTPONLY = os.getenv('CSRF_COOKIE_HTTPONLY', 'False') == 'True'
-CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
-CSRF_USE_SESSIONS = os.getenv('CSRF_USE_SESSIONS', 'False') == 'True'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY=True
+CSRF_USE_SESSIONS=True
+
 X_ACCEL_REDIRECT_PREFIX = 'media'
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()

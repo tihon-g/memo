@@ -14,6 +14,12 @@ class Command(BaseCommand):
         parser.add_argument('order_id', nargs='?', type=int, default=False)
 
     def handle(self, *args, **options):
+        if not os.getenv('BLENDER_LOCAL'):
+            print("specify ENV: 'BLENDER_LOCAL'. I don't know witch blender you want to use and where is it configured")
+            return
+        from dotenv import load_dotenv
+        #it can be rewrite os environ from another location
+        load_dotenv(dotenv_path=os.getenv('BLENDER_LOCAL'), verbose=True)
 
         if not os.getenv('RENDER_MACHINE') or not os.getenv('BLENDER') or not os.getenv('BLENDER_PY'):
             print("specify ENV: 'RENDER_MACHINE' & 'BLENDER & BLENDER_PY' on this machine! Can't run rendering process!")

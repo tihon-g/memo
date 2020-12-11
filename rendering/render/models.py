@@ -144,7 +144,7 @@ class Order(models.Model):
         try:
             import pika, json
             credentials = pika.PlainCredentials(os.getenv('RABBIT_USER'), os.getenv('RABBIT_PASSWORD'))
-            parameters = pika.ConnectionParameters(os.getenv('RABBIT_HOST'), os.getenv('RABBIT_PORT'), '/', credentials=credentials)
+            parameters = pika.ConnectionParameters(os.getenv('RABBIT_HOST'), os.getenv('RABBIT_PORT'), os.getenv('RABBIT_VIRTUALHOST', default='/'), credentials=credentials)
             connection = pika.BlockingConnection(parameters)
             channel = connection.channel()
             self.running = False  # put to queue

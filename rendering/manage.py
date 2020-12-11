@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import os
 import sys
+
+# load_dotenv does not override existing System environment variables.
+# To override, pass override=True to load_dotenv().
 from dotenv import load_dotenv
 load_dotenv(verbose=True) # load_dotenv()
 

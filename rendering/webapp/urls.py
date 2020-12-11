@@ -19,14 +19,17 @@ urlpatterns = [
         path('products/',  include([
             path('', views.api_product_index, name='api-product-index'),
             path('<int:product_id>/', views.api_product_kinds, name='api-product-kinds'),
+            path('<int:product_id>/<int:kind_id>', views.api_product_kind_details, name='api-product-kinds-details'),
         ])),
         path('patterns/', include([
             path('', views.api_pattern_index, name='api-pattern-index'),
             path('<int:pattern_id>/', views.api_pattern_details, name='api-pattern-details'),
         ])),
-        #path('render/<int:kind_id>/', views.api_render_info, name='api-render-info'),
+        path('finish/<int:finish_id>/', views.api_get_finish, name='api-get-finish'),
+        path('qualities/', views.api_quality_index, name='api-qualities-index'),
         path('render/info/', views.api_render_info, name='api-render-info'),
-        path('render/<int:kind_id>/<str:rule>/', views.api_get_render, name='api-render'),
+        path('render/', views.api_get_render, name='api-render'),
+        #path('render/<int:kind_id>/<str:rule>/', views.api_get_render, name='api-render'),
         path('limitations', views.api_limitations, name='api-limitations'),
         path('colorcharts', views.api_colorcharts, name='api-colorcharts'),
     ]))
