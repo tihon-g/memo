@@ -339,8 +339,8 @@ class ProductKind(models.Model):
 
     @property
     def renderOrderTemplate(self):
-        conf = '-'.join([p.name+":{}" for p in self.renderOrderParts])
-        return f"config={conf}"
+        return '-'.join([p.name+":{}" for p in self.renderOrderParts])
+        #return f"config={conf}"
         #     return ';'.join([p.cycle_str for p in self.parts.all()])
 
     @property

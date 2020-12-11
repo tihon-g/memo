@@ -257,7 +257,14 @@ def api_colorcharts(request):
     return JsonResponse(res, status=200)
 
 def api_get_finish(request, finish_id):
-    return serve(request, Finish.objects.get(pk=finish_id).diffuse_relpath, settings.STATIC_ROOT)
+    try:
+        f = Finish.objects.get(pk=finish_id).diffuse_relpath
+        if f:
+            return serve(request, Finish.objects.get(pk=finish_id).diffuse_relpath, settings.STATIC_ROOT)
+        else:
+            return JsonResponse({'error': f'not found diffuse for finish {finish_id}'}, status=404)
+    except:
+        return JsonResponse({'error': f'not found finish {finish_id}'}, status=404)
 
 def api_quality_index(request):
     return JsonResponse({"qualities": list(Quality.objects.order_by('id').

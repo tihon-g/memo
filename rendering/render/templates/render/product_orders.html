@@ -2,28 +2,9 @@
 {% load render_tags %}
 {% load static %}
 {% block content %}
+
 {% include "./rendering_server.html" %}
-    <div class="row">
-        <div class="col-12">
-            <div class="alert alert-success" role="alert">
-                <form method="POST" id="product-select-form">{% csrf_token %}
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Orders for</span>
-                    </div>
-                    <select name='product-select' class="custom-select" id="product-selection" onchange="changeProduct()">
-              {% for prod in products %}
-            <option {%if prod.id == product.id %} selected {%endif%}value="{{prod.id}}">{{ prod.name }}, id#{{prod.id}}</option> <!-- todo put hdr into db -->
-              {% endfor %}
-                </select>
-                    <a href="{% url 'render:product-sketchbook' product_id=product.id %}" role="button" aria-pressed="true" class="btn btn-outline-primary">Product Sketchbook</a>
-                </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <!--form method="POST" id="product-orders-form"-->
-    <div class="row">
+<div class="row">
       <div class="col-12">
         <ul class="nav nav-tabs card-header-tabs p-0 m-0">
         {% for order in product.orders %}

@@ -58,7 +58,7 @@ order.worker = worker
 if order.volume != order.N:
     order.volume = order.N
 if not order.rule:
-    order.rule = order.kind.renderOrderTemplate.replace('{}', '*').replace('-',';')[7:]
+    order.rule = order.kind.renderOrderTemplate.replace('{}', '*').replace('-',';')
 order.save()
 dest_folder = ""
 

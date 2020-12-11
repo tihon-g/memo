@@ -154,12 +154,14 @@ class Finish(models.Model):
     @property
     def diffuse(self):
         psqu = self.pattern.squ if self.pattern.squ else ''
-        if self.pattern.maps.diffuse == 'finish':
-            return os.path.join(f'{self.pattern.name}_{psqu}_{self.squ}.jpg')
-        elif self.pattern.maps.diffuse == 'pattern':
-            return self.pattern.diffuse
-        else:
-            return ""
+        if self.pattern.maps:
+            if self.pattern.maps.diffuse == 'finish':
+                return os.path.join(f'{self.pattern.name}_{psqu}_{self.squ}.jpg')
+            elif self.pattern.maps.diffuse == 'pattern':
+                return self.pattern.diffuse
+
+        return ""
+
 
     @property
     def normal(self):
@@ -184,7 +186,10 @@ class Finish(models.Model):
 
     @property
     def diffuse_relpath(self):
-        return f"material/finishes/{self.pattern_id}/{self.diffuse}"
+        if self.diffuse:
+            return f"material/finishes/{self.pattern_id}/{self.diffuse}"
+        else:
+            return ""
 
     def get_absolute_url(self):
         return mark_safe(u'<a href="static/{}">{}:{}</a>'.format(self.diffuse_relpath, self.squ, self.name))
