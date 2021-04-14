@@ -24,5 +24,8 @@ urlpatterns = [
     path('material/', include('material.urls', namespace='material')),
     path('furniture/', include('furniture.urls', namespace='furniture')),
     path('render/', include('render.urls', namespace='render')),
-    # path('demo/', include('webapp.urls'))
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('messages/', include('chat.urls', namespace='chat')),
+    #path('chat/', include('chat.urls')),
+]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

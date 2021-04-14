@@ -1,0 +1,70 @@
+{% extends "header.html" %}
+
+{% block content %}
+<h3>Thread for {% if user != object.first %}{{ object.first }}{% else %}{{ object.second }}{% endif %}</h3>
+<ul id='chat-items'>
+{% for chat in object.chatmessage_set.all %}
+
+<li>{{ chat.message }} via {{ chat.user }}</li>
+
+{% endfor %}
+</ul>
+
+<form id='form' method='POST'> {% csrf_token %}
+{{form.as_p }}
+<input type='submit' class='btn btn-primary'/>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function(){
+    // alert("jquery world")
+    var formData = $("#form")
+    var messageInput = $("#id_message")
+    var chatItems = $('#chat-items')
+    var loc = window.location
+    var prefix = (loc.protocol == "https:") ? "wss://": "ws://";
+    var webSocketEndpoint =  prefix + loc.host + loc.pathname;
+    console.log(`webSocketEndpoint = ${webSocketEndpoint}`);
+    var socket = new WebSocket(webSocketEndpoint)
+    //var socket = new ReconnectingWebSocket(webSocketEndpoint)
+
+    socket.onmessage = function(e){
+        console.log('on message', e);
+        // alert(e.data)
+        var msgData = JSON.parse(e.data);
+        console.log(msgData);
+        chatItems.append(`<li>${msgData.msg} via ${msgData.user}</li>`)
+    }
+
+    socket.onopen = function(e){
+        console.log('on open', e);
+        formData.submit(function(event){
+            event.preventDefault()
+            var messageText = messageInput.val()
+            console.log(`socket.onopen = ${messageText}`)
+            var jsonData = JSON.stringify({msg: messageText, user:'tihon'})
+            socket.send(jsonData)
+            formData[0].reset()
+        })
+    }
+
+    socket.onerror = function(e){
+        console.log('on error', e)
+    }
+    socket.onclose = function(e){
+        console.log('on close', e)
+    }
+
+    if (socket.readyState == WebSocket.OPEN) {
+
+    } else if (socket.readyState == WebSocket.CONNECTING){
+        console.log("connecting..")
+    }
+
+})
+
+</script>
+{% endblock %}

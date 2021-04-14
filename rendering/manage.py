@@ -5,7 +5,7 @@ import sys
 # load_dotenv does not override existing System environment variables.
 # To override, pass override=True to load_dotenv().
 from dotenv import load_dotenv
-load_dotenv(verbose=True) # load_dotenv()
+load_dotenv(verbose=True)  # load_dotenv()
 
 if __name__ == '__main__':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rendering.settings')

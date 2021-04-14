@@ -5,6 +5,9 @@ from . import views
 app_name = 'render'
 urlpatterns = [
     path('', views.index, name='index'),
+    path('kill_blender/<str:pids>/', views.kill_blender, name='kill_blender'),
+    path('kill_queue/<str:pids>', views.killQueueManager, name='kill_queue'),
+    path('start_queue/', views.startQueueManager, name='start_queue'),
     path('scene/', views.scene, name='scene'),
     path('scene/<int:scene_id>', views.scene_details, name='scene-details'),
     path('queue/', views.ajax_orderqueue, name='order-queue'),

@@ -1,53 +1,55 @@
 {% extends "header.html" %}
 {% load static %}
+{% load render_tags %}
 
 {% block content %}
-{% load render_tags %}
-{% include "./rendering_server.html" %}
-  <div class="row">
-    <div class="col-12">
-      <div class="alert alert-success" role="alert">
-        Products catalog with the ability to make renders (some of them has prepared renders)
-      </div>
+{% include "./server_info.html" %}
+<div class="row">
+  <div class="col-12">
+    <div class="alert alert-info p-1 m-2" role="alert">
+      Products catalog with the ability to make renders (some of them has prepared renders)
     </div>
-    <div class="card-group">
-    {% for product in products %}
-      <div class="col-sm-6 col-md-4 col-lg-3 col-xl-2">
-        <div class="card">
-          <div class="card-header">
-            <p class="card-text"><small class="text-muted">{{product.name}}</small>
-            {% if product.renders|length %}
-            <span><small><a href="{% url 'render:product-sketchbook' product.id %}">sketchbook</a></small></span>
-            {% endif %}
-            </p>
-          <p class="card-text"><small> {{product.renders|length }} posted renders {% if product.rendersInOrders|length %}, +{{product.rendersInOrders|length}} prepared{%endif%}
-            {% if product.renders|length or product.rendersInOrders|length %}
-            <span class="badge badge-primary"><i class="fa fa-archive"></i> {{product.diskSize|size_Mb}}</span>
-            {% endif %}
-            </small>
+  </div>
+  <div class="card-group">
+  {% for product in products %}
+    <div class="col-sm-6 col-md-4 col-lg-3 col-xl-2">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-text"><small class="text-muted">{{product.name}}</small>
+          {% if product.renders|length %}
+          <span><small><a href="{% url 'render:product-sketchbook' product.id %}">sketchbook</a></small></span>
+          {% endif %}
           </p>
-        </div>
-          <div class="card-body">
-            <img src="/{{product.model.swatch}}" class="card-img-top" alt="{{product.model.name}}">
-           </div>
-          <div class="card-footer">
-          {% queue obj=product.orders as qu %}
-          <small><a class="card-link" href="{% url 'render:product-orders' product.id %}">{{product.orders|length}} orders</a>
-          {% if qu|length %}
-            <span class="badge badge-info">in queue:{{qu|length}}</span>
-            {% for o in qu %}
-              {% if o.running %}
-             <span class="badge badge-danger">running: #{{o.id}} </span>
-              {% endif %}
-            {% endfor %}
-          {% endif%}
+        <p class="card-text"><small> {{product.renders|length }} posted renders {% if product.rendersInOrders|length %}, +{{product.rendersInOrders|length}} prepared{%endif%}
+          {% if product.renders|length or product.rendersInOrders|length %}
+          <span class="badge badge-primary"><i class="fa fa-archive"></i> {{product.diskSize|size_Mb}}</span>
+          {% endif %}
           </small>
-        </div>
-        </div>
-       </div>
-      {% endfor %}
+        </p>
+      </div>
+        <div class="card-body">
+          <img src="/{{product.model.swatch}}" class="card-img-top" alt="{{product.model.name}}">
+         </div>
+        <div class="card-footer">
+        {% queue obj=product.orders as qu %}
+        <small><a class="card-link" href="{% url 'render:product-orders' product.id %}">{{product.orders|length}} orders</a>
+        {% if qu|length %}
+          <span class="badge badge-info">in queue:{{qu|length}}</span>
+          {% for o in qu %}
+            {% if o.running %}
+           <span class="badge badge-danger">running: #{{o.id}} </span>
+            {% endif %}
+          {% endfor %}
+        {% endif%}
+        </small>
+      </div>
+      </div>
      </div>
-    {# endfor #}
-    </div>
-  {#endfor#}
+    {% endfor %}
+   </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
 {% endblock %}

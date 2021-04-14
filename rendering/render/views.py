@@ -1,4 +1,6 @@
 # import asyncio
+import subprocess
+import psutil
 import json
 import os
 #import psutil
@@ -12,6 +14,9 @@ from django.contrib import messages
 from django.core.management import call_command
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.http import HttpResponseRedirect
+
 from django.urls import reverse_lazy
 from django.views.generic.edit import DeleteView
 from furniture.models import Model3D, ProductKind, Product, Configuration
@@ -19,56 +24,132 @@ from material.models import Finish
 from wcmatch import pathlib
 
 from .models import Order, Scene, Actor, Camera, Quality, Machine
-
+from render.utils import execute_wait
 # for top part of page about server
 
-def server_view(request):
-    if request.method == 'POST':
-        if 'kill_processes' in request.POST:
-            killAllRenderers(request)
+# def server_view(request):
+#     if request.method == 'POST':
+#         if 'kill_processes' in request.POST:
+#             killAllRenderers(request)
+#
+#         # if 'start_process' in request.POST:
+#         #     startProc()
+#         #     messages.add_message(request, messages.INFO, 'Run rendering!')
+#
+#         if 'kill_queue_manager' in request.POST:
+#             killQueueManager(request)
+#
+#         if 'start_queue_manager' in request.POST:
+#             call_command('queue')
+#             messages.add_message(request, messages.INFO, 'Run Queue Manager!')
 
-        # if 'start_process' in request.POST:
-        #     startProc()
-        #     messages.add_message(request, messages.INFO, 'Run rendering!')
-
-        if 'kill_queue_manager' in request.POST:
-            killQueueManager(request)
-
-        if 'start_queue_manager' in request.POST:
-            call_command('queue')
-            messages.add_message(request, messages.INFO, 'Run Queue Manager!')
+def procList(procname):
+    procs = []
+    for p in psutil.process_iter():
+        try:
+            if procname == p.name() and p.is_running() and p.cmdline():
+                procs.append(p)
+        except:
+            pass
+    return procs
 
 def get_server_info():
-    m = Machine.objects.all()
+    blender = {}
+    redis = {'config': settings.CHANNEL_LAYERS['default']['CONFIG']['hosts'], "status": 'not active'}
+    rabbit = {'config': os.getenv('RABBIT_HOST')}
+    python = []
+
+    for p in procList('Python'):
+        if 'queue' in p.cmdline():
+            python.append(p)
+    # https://psutil.readthedocs.io/en/latest/index.html?highlight=on%20terminate#psutil.Process.terminate
+    memory = {}  # psutil.memory_info()
+
+    # check redis (for Websockets)
+    for s in execute_wait(['redis-cli', 'ping']):
+        if 'PONG' in s:
+            redis["status"] = 'active'
+            break
+
+    if os.getenv('BLENDER_LOCAL'):
+        from dotenv import load_dotenv
+        # it can be rewrite os environ from another location
+        load_dotenv(dotenv_path=os.getenv('BLENDER_LOCAL'), verbose=True)
+        blender['machine'] = os.getenv('RENDER_MACHINE')
+        blender['version'] = os.getenv('BLENDER_VERSION')
+        blender['processes'] = procList(os.path.basename(os.getenv('BLENDER')))
+
+    db_engine = settings.DATABASES['default']['ENGINE'].split('.')[-1]
+    db_host = 'local'
+    if 'sqlite' not in db_engine:
+        db_host = settings.DATABASES['default']['HOST']
+    return {
+        "db": {
+            "engine": f"{db_engine} @ {db_host} ",
+            "models": Model3D.objects.filter(blend__isnull=False),
+            "kinds": ProductKind.objects.filter(product__model__blend__isnull=False),
+            "orders": {
+                "in_queue": Order.objects.filter(running__isnull=False),  # "#n: volume"
+                "from_API": "",
+                "from_scketchbook": ""
+            }
+        },
+        'queue': {
+            "manager": "",
+            "orders": ""
+        },
+        'redis': redis,
+        'blender': blender,
+        'rabbit': rabbit,
+        'python': python,
+        "machines": Machine.objects.all()
+    }
+
+def kill_blender(request, pids = "-"):
+    try:
+        if pids and pids != '-':
+            for pid in pids.split('-'):
+                p = psutil.Process(int(pid))
+                if p.name() == os.path.basename(os.getenv('BLENDER')):
+                    en = p.environ()
+                    if 'RENDER_ORDER_ID' in en:
+                        p.terminate()
+                        p.wait()
+                        o = Order.objects.get(pk=int(en['RENDER_ORDER_ID']))
+                        o.cancel()
+                        messages.add_message(request, messages.WARNING, f'{p} terminated')
+        else:
+            # find all blender processes and kill that
+            pass
+    except Exception as err:
+        print(repr(err))
+        return redirect('render:index')
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+def killQueueManager(request, pids = ""):
+    try:
+        if pids:
+            for pid in pids.split('-'):
+                p = psutil.Process(int(pid))
+                cmd = p.cmdline()
+                if p.name() == 'Python' and 'queue' in cmd and 'manage.py' in cmd:
+                    p.terminate()
+                    p.wait()
+    except Exception as err:
+        print(repr(err))
+        return redirect('render:index')
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
-def killAllRenderers(request):
-    # for p in psutil.process_iter():
-    #     try:
-    #         if settings.RENDER_MACHINE['PROCESS'] == p.name():
-    #             p.terminate()
-    #             messages.add_message(request, messages.WARNING, f'{p} terminated')
-    #     except:
-    #         pass
-    time.sleep(0.1)
-
-
-def killQueueManager(request):
-    plist = get_server_info()['tasks']
-    #if 'queue' in plist:
-        # p = psutil.Process(plist['queue']['pid'])
-        # p.terminate()
-        # messages.add_message(request, messages.WARNING, f'queue manager {p} terminated')
-        # time.sleep(0.1)
-
-
-#def startQueueManager():
-    # call_command('queue')
+def startQueueManager(request):
+    subprocess.Popen([os.getenv('PYTHON'), "manage.py", "queue"], cwd=settings.BASE_DIR)
+    #call_command('queue')
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 # todo: asinc тут само то сделать!!
 def index(request):  # async
     #context = {}
-    server_view(request)
+    #server_view(request)
 
     return render(request, 'render/index.html',
         {
@@ -147,7 +228,7 @@ def scene(request):
 
 @staff_member_required
 def productOrders(request, product_id):
-    server_view(request)
+    #server_view(request)
     if request.method == 'POST':
         if 'product-select' in request.POST:
             return redirect('render:product-orders', int(request.POST['product-select']))
@@ -218,10 +299,14 @@ def orderRun(request, pk):
         #     o.worker = Machine.objects.get(name=settings.RENDER_MACHINE['NAME'])
         #     o.save()
         res = o.run()
-        if res == 'ok':
-            messages.add_message(request, messages.INFO, 'Order put in the queue and successfully arranged in rabbitMQ')
-        else:
-            messages.add_message(request, messages.ERROR, res)
+        # from django.core.management import call_command
+        # res = call_command('blender', pk)
+        #messages.add_message(request, messages.INFO, res)
+
+        # if res == 'ok':
+        #     messages.add_message(request, messages.INFO, 'Order put in the queue and successfully arranged in rabbitMQ')
+        # else:
+        #     messages.add_message(request, messages.ERROR, res)
     except Exception as err:
         messages.add_message(request, messages.ERROR, repr(err))
     return redirect('render:product-orders', o.kind.product.id)
@@ -238,9 +323,12 @@ def orderStop(request, pk):
     try:
         os.remove(os.path.join(o.rendersPath, 'stopfile'))
         # to do rabbit
+        if o.worker.name == os.getenv('RENDER_MACHINE'):
+            pass
+            # wait for blender quits? or quit?
     except Exception as e:
         print(e)
-        return redirect('render:product-orders', o.kind.product.id)
+    #return redirect('render:product-orders', o.kind.product.id)
     return orderCancel(request, pk)
 
 
@@ -288,6 +376,7 @@ def ajax_orderqueue(request):
     result = {}
     for order in orders:
         result[order.id] = {'kind': order.kind.name,
+                            'product_ref': reverse("render:product-orders", args=[order.kind.product_id]),
                             'running': order.running,
                             'worker': order.worker.name if order.worker else "",
                             'N': order.N,

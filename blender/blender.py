@@ -55,12 +55,14 @@ worker.activeOrder = order
 worker.save()
 order.running = True
 order.worker = worker
+print(f'!! set worker:${worker}')
 if order.volume != order.N:
     order.volume = order.N
 if not order.rule:
     order.rule = order.kind.renderOrderTemplate.replace('{}', '*').replace('-',';')
 order.save()
 dest_folder = ""
+relPath = ""
 
 
 def do_rendering(deep, prev_cover):
@@ -72,13 +74,11 @@ def do_rendering(deep, prev_cover):
     """
     cycle = cycles[deep]
 
-    print(f"do_rendering {deep}|{prev_cover}|{cycle}")
-
+    print(f"do_rendering {deep}|{prev_cover}")
     finishes = cycle['finishes']
     if cycle['config'].colorChart:
         prev = prev_cover.split('_')[-1]
         finishes = cycle['config'].colorChart.match(prev) # only one, but maybe array
-
     pat = -1
     for f in finishes:
         if f.pattern.id != pat:
@@ -223,24 +223,29 @@ def apply_mat(deep, m):
             shader.nodes["Hue Saturation Value"].inputs[2].default_value = m.features.diffuse_hsv.value
 
 def do_and_save_render(cover, shadow=False):
+    if cover in current_job['done_renders']:
+        print(f'already done {cover}')
+        return
     f = order.kind.filename(cover[1:].split('_')) + f'.{order.quality.ext}'
     fullpath = os.path.join(dest_folder, f)
-    print(f'!!do_and_save_render {cover} in {fullpath}')
+    print(f'!!start make and save render [{cover}] in {fullpath}')
     scene.render.filepath = fullpath
     started = datetime.now()
     bpy.ops.render.render(write_still=True)
-    if order.volume > 1:
-        current_job['counter'] += 1
-        with open(order.doneLog['url'], 'a') as data_renders_log:
-            data_renders_log.write(cover + '\n')
-        current_job['done_renders'].append(cover)
-    print('!!render done')
-    difference = datetime.now() - started
-    worker.render_made()
-    order.renders_done += 1
-    order.save()
-    print(f"!!finish rendering {fullpath} | {difference}")
-
+    if order.running:
+        if order.volume > 1:
+            current_job['counter'] += 1
+            with open(order.doneLog['url'], 'a') as data_renders_log:
+                data_renders_log.write(cover + '\n')
+            current_job['done_renders'].append(cover)
+        difference = datetime.now() - started
+        worker.render_made()
+        order.renders_done += 1
+        order.save()
+        print(f'!!saved|{order.renders_done}|{os.path.join(relPath, f)}|{difference}')
+    else:
+        print("!!EXIT!! someone stop order. exit!")
+        exit()
 
 if __name__ == "__main__":
     # hide not covered meshes
@@ -256,11 +261,15 @@ if __name__ == "__main__":
 
     if order.volume > 1:
         # manage big orders
-        dest_folder = os.path.join(order.rendersPath, str(order.quality.id))
-        try:
-            os.makedirs(dest_folder)
-        except:
-            pass
+        relPath = os.path.join(order.relRendersPath, str(order.quality.id))
+    else:
+        relPath = os.path.join(order.kind.product.relRendersPath, str(order.quality.id))  # direct in MEDIA_ROOT
+    dest_folder = os.path.join(os.getenv('RENDER_DIR'), relPath)
+    try:
+        os.makedirs(dest_folder)
+    except:
+        pass
+    if order.volume > 1:
         done = []  # list of ready renders for this order.
         if not os.path.exists(order.doneLog['url']):  # start order from the begining
             with open(order.doneLog['url'], 'w') as data_renders_log:  # save output directory & render options
@@ -276,13 +285,6 @@ if __name__ == "__main__":
         print(f"!!Done renders before {len(done)}")
         current_job['done_renders'] = done
         current_job['counter'] = 0
-    else:
-        dest_folder = os.path.join(order.kind.product.rendersPath, str(order.quality.id))  # direct in MEDIA_ROOT
-        try:
-            os.makedirs(dest_folder)
-        #os.makedirs(os.path.join(settings.RENDER_MACHINE['RENDER_DIR'], str(order.kind.product.model.id), str(order.quality.id)))
-        except:
-            pass
 
     scene.render.engine = 'BLENDER_EEVEE'  # 'CYCLES'
     scene.render.resolution_x = order.quality.size_x
@@ -297,9 +299,9 @@ if __name__ == "__main__":
     # stop_file - good choice to pause rendering
     if order.volume > 1:
         open(stop_file, 'w').close()
-    print(f"!! before do_rendering, volume={order.volume}")
+    print(f"!! scene preparations completed. Volume={order.volume}")
     do_rendering(0, "")  # recursive magic!
-    print("!! OK")
+    print("do_rendering completed")
     if order.volume > 1:
         os.remove(stop_file) if os.path.exists(stop_file) else None  # work done - we don't need stop file
         if current_job['counter'] > 0:
@@ -309,7 +311,7 @@ if __name__ == "__main__":
         with open(os.path.join(order.rendersPath, 'finish'), 'w') as fin:
             fin.write(str(current_job['counter']))
         order.status = f"{current_job['counter']} in {datetime.now() - start} s"
-        print(f"!! {order.status}")
+        print(f"!! order status: {order.status}")
     else:
         order.renders_posted = 1
     order.running = None

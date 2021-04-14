@@ -9,3 +9,6 @@ wcmatch
 Pillow
 gunicorn
 pika
+channels
+channels_redis
+psutil

@@ -1,0 +1,13 @@
+{% extends "header.html" %}
+{% load render_tags %}
+
+{% block content %}
+    <h2>My threads</h2>
+    <ul>
+        {% for thread in object_list %}
+<!--        testing this -->
+        <li><a href="{% url 'chat:thread' username=request.user.id %}">{{thread.id}}</a> {{ thread }}</li>
+<!--        <li><a href="/messages/{{thread|friend:request.user.id}}">{{thread.id}}</a> {{ thread }}</li>-->
+        {% endfor %}
+    </ul>
+{% endblock %}

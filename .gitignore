@@ -10,5 +10,6 @@
 *.pot
 *.sh
 /rendering/static/
+/rendering/memo.sqlite
 /rendering/settings.py
 __pycache__/

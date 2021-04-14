@@ -6,19 +6,7 @@ import subprocess
 import socket
 import pika
 import time
-
-def execute_wait(com):
-    proc = subprocess.Popen(com, shell=False, stdout=subprocess.PIPE, universal_newlines=True)
-    # windows Warning : Using shell = True can be a security hazard
-    # Note Do not use stdout=PIPE or stderr=PIPE with this function as that can deadlock based on the child process output volume. Use Popen with the communicate() method when you need pipes.
-    # subprocess.run(["ls", "-l", "/dev/null"], capture_output=True)
-    for stdout_line in iter(proc.stdout.readline, ""):
-        yield stdout_line
-    proc.stdout.close()
-    return_code = proc.wait()
-    if return_code:
-        print(f"proc failed - {subprocess.CalledProcessError(return_code, com)}")
-
+from render.utils import execute_wait
 
 def main():
     pingcounter = 0
@@ -43,7 +31,7 @@ def main():
         # берем из очереди только 1 сообщение
         channel.basic_qos(prefetch_count=1)
         print('[*] Waiting for messages. To exit press CTRL+C')
-        channel.basic_consume('orders', process_order)
+        channel.basic_consume(os.environ.get('RABBIT_QUEUE'), process_order)
         channel.start_consuming()
 
 
@@ -74,7 +62,7 @@ def parsing(s):
 from dotenv import load_dotenv
 load_dotenv()
 
-print(f"queue.py {os.environ['RENDER_MACHINE']} started")
+print(f"rabbit_queue.py {os.environ['RENDER_MACHINE']} started")
 if __name__ == "__main__":
     main()
 

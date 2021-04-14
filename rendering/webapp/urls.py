@@ -15,6 +15,7 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('social-auth/', include('social_django.urls', namespace="social")),
     path('api/', include([
+        path('/', views.api_index, name='api'),
         path('models/', views.api_model_index, name='api-model-index'),
         path('products/',  include([
             path('', views.api_product_index, name='api-product-index'),
@@ -29,8 +30,9 @@ urlpatterns = [
         path('qualities/', views.api_quality_index, name='api-qualities-index'),
         path('render/info/', views.api_render_info, name='api-render-info'),
         path('render/', views.api_get_render, name='api-render'),
-        #path('render/<int:kind_id>/<str:rule>/', views.api_get_render, name='api-render'),
         path('limitations', views.api_limitations, name='api-limitations'),
         path('colorcharts', views.api_colorcharts, name='api-colorcharts'),
+        path('defaultfinish/<int:kind_id>', views.api_defaultfinish, name='api-defaultfinish'),
+
     ]))
 ]

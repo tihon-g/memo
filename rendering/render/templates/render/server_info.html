@@ -1,0 +1,179 @@
+{% load render_tags%}
+<form method="POST" class="order-form">{% csrf_token %}
+ <div class="row">
+   <div class="col-12" id="orders">
+    <!--div class="alert alert-info p-1" role="alert">
+      Admin Server dashboard
+    </div-->
+    <div class="card-group">
+       <div class="card">
+         <div class="card-body">
+          <h5 class="card-title">db:</h5>
+          <h6 class="card-subtitle mb-2 text-muted">{{server.db.engine}}</h6>
+         Redis: {{server.redis.status}}
+          <!--ul class="list-group list-group-flush">
+            <li class="list-group-item">models: {{server.db.models|length}}</li>
+            <li class="list-group-item">Styles: {{server.db.kinds|length}}</li>
+          </ul>
+          <a href="/api" class="card-link">API</a>
+          <a href="/api/docs" class="card-link">API docs</a-->
+        </div>
+         <div class="card-footer">
+        3D-models: {{server.db.models|length}}
+         </div>
+        </div>
+       <div class="card">
+         <div class="card-body">
+          <h5 class="card-title">Queue manager {% if server.python %}
+          <a href="{% url 'render:kill_queue' pids=server.python|pids %}" class="btn btn-danger p-0 m-0">stop</a>
+          {% else %}
+          <a href="{% url 'render:start_queue' %}" class="btn btn-primary p-0 m-0">start</a>
+          {% endif %}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">{% if server.rabbit.config %} RabbitMQ [{{server.rabbit.config}}] {% else %} [without RabbitMQ] {% endif %}</h6>
+
+          <ul class="list-group list-group-flush orders">
+
+          </ul>
+         </div>
+         <div class="card-footer">
+             active orders:<span class="active-orders">{{server.db.orders.in_queue|length}}</span>
+        </div>
+      </div>
+       <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Blender
+          <a href="{% url 'render:kill_blender' pids=server.blender.processes|pids %}" role="button" aria-pressed="true" class="btn btn-outline-danger p-0">Kill processes!</a>
+        </h5>
+          <h6 class="card-subtitle mb-2 text-muted">{%if server.blender %} {{server.blender.version}} `{{server.blender.machine}}` {% else %} no local blender {% endif %} </h6>
+        <div class="alert alert-info m-1 p-1" role="alert">
+
+        </div>
+        <ul class="processes">
+            {% for p in server.blender.processes %}
+            <li>{{p.environ.RENDER_ORDER_ID}}<span class="badge badge-info">{{p.status}}</span> started:{{p.create_time|formatted}}
+            <a href="{% url 'render:kill_blender' pids=p.pid %}" role="button" aria-pressed="true" class="btn btn-outline-danger">kill process</a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        </div>
+        <div class="card-footer">
+            processes:
+            <span>{{server.blender.processes|length}}</span>
+            {#  #}
+            </div>
+       </div>
+    </div>
+   </div>
+ </div>
+</form>
+
+<template id="server-info-order-row">
+    <li class="list-group-item">
+      <div class="row">
+        <div class="col-1 data id">id</div>
+        <div class="col-1">
+            <span class="badge"></span>
+        </div>
+        <div class="col-5"><a href="#" class="data kind">kind</a></div>
+
+        <div class="col-3">
+          <div class="progress">
+            <div class="progress-bar progress-bar-striped bg-success order" role="progressbar" style="width: 0%"  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">#done</div>
+          </div>
+        </div>
+        <div class="col-2 data machine">machine</div>
+    </div>
+    </li>
+</template>
+
+    <!--div class="col-md-2 col-4">
+          <div class="alert alert-dark m-1 p-1 server-db" role="alert">db: {{server.db.engine}} </div>
+        </div>
+        <div class="col-md-3 col-4">
+          <div class="alert alert-dark m-1 p-1 server-blender" role="alert"> {%if server.blender %} blender {{server.blender.version}} `{{server.blender.machine}}` {% else %} no blender! {% endif %} </div>
+        </div>
+        <div class="col-md-3 col-4">
+          <div class="alert alert-dark m-1 p-1 server-blender" role="alert">Redis:{{server.redis.status}} </div>
+        </div>
+        <div class="col-md-4 col-12">
+          <div class="alert alert-dark m-1 p-1 server-blender" role="alert">Queue manager:
+          {% if server.rabbit.config %} RabbitMQ [{{server.rabbit.config}}] {% else %} [without RabbitMQ] {% endif %}
+          {% if server.python %}
+          <a href="{% url 'render:kill_queue' pids=server.python|pids %}" class="btn btn-danger p-0 m-0">kill</a>
+          {% else %}
+          <a href="{% url 'render:start_queue' %}" class="btn btn-primary p-0 m-0">start</a>
+          {% endif %}
+          </div>
+        </div-->
+
+    <!--div class="alert alert-success m-1 p-1 orders" role="alert">Active orders:</div-->
+
+      {#for o in server.db.orders.in_queue#}
+      <!--div class="row" order="{{o.id}}">
+          <div class="col-1 data id">{{o.id}}</div>
+          <div class="col-8 data kind">{{o.kind}}</div>
+          <div class="col-3 data machine">{{o.worker}}</div>
+          <div class="col-2">
+            <span class="badge"></span>
+        </div>
+          <div class="col-10">
+          <div class="progress">
+            <div class="progress-bar progress-bar-striped bg-success order" role="progressbar" style="width: 0%"  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">#done</div>
+          </div>
+        </div>
+        </div-->
+      {# endfor #}
+
+      {%if server.blender %}
+      <!--div class="col-12" id="blenders">
+        <div class="alert alert-info m-1 p-1" role="alert">
+        {% if server.blender.processes %}
+            Blender processes: <a href="{% url 'render:kill_blender' pids=server.blender.processes|pids %}" role="button" aria-pressed="true" class="btn btn-outline-danger">Kill ALL!</a>
+        {% else %}
+             No Blender processes - Rendering server is idle
+        {% endif %}
+        </div>
+        <ul class="processes">
+            {% for p in server.blender.processes %}
+            <li>{{p.environ.RENDER_ORDER_ID}}<span class="badge badge-info">{{p.status}}</span> started:{{p.create_time|formatted}}
+            <a href="{% url 'render:kill_blender' pids=p.pid %}" role="button" aria-pressed="true" class="btn btn-outline-danger">kill process</a>
+            </li>
+            {% endfor %}
+        </ul>
+      </div-->
+      {% endif %}
+    <!--div class="col-md-12 col-xl-6" id="machines">
+      <div class="alert alert-success m-1 p-1" role="alert">Render Machines:</div>
+      <div class="row">
+            <div class="col-4"><div class="alert alert-secondary" role="alert">name</div></div>
+
+            <div class="col-4"><div class="alert alert-secondary" role="alert">lastRender</div></div>
+            <div class="col-4"><div class="alert alert-secondary" role="alert">activeOrder</div></div>
+        </div>
+      {% for m in server.machines %}
+        <div class="row p-1" machine="{{m.id}}" >
+            <div class="col-4">{{m.name}}</div>
+            <div class="col-4">{{m.lastRender}}</div>
+            <div class="col-4">{{m.activeOrder_id}}</div>
+         </div>
+      {% endfor %}
+    </div-->
+
+
+<!--template id="server-info-order-row">
+  <div class="row">
+    <div class="col-1 data id">id</div>
+    <div class="col-1">
+        <span class="badge"></span>
+    </div>
+    <div class="col-5"><a href="#" class="data kind">kind</a></div>
+
+    <div class="col-3">
+      <div class="progress">
+        <div class="progress-bar progress-bar-striped bg-success order" role="progressbar" style="width: 0%"  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">#done</div>
+      </div>
+    </div>
+    <div class="col-2 data machine">machine</div>
+</div>
+</template-->

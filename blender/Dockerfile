@@ -47,6 +47,9 @@ ENV RABBIT_USER django
 ENV RABBIT_PASSWORD memo
 ENV RABBIT_HOST 127.0.0.1
 ENV RABBIT_PORT 5672
+ENV RABBIT_VIRTUALHOST default
+ENV RABBIT_QUEUE orders
+
 
 RUN curl -L ${BLENDER_URL} | tar -xJ -C /usr/local/ \
 	&& mv /usr/local/${BLENDER_ARCH} /usr/local/blender \
@@ -54,7 +57,7 @@ RUN curl -L ${BLENDER_URL} | tar -xJ -C /usr/local/ \
     && ${PYTHON} -m ensurepip \
     && ${PIP} install --upgrade pip \
     && ${PIP} install -r /usr/local/requirements.txt
-    #&& ${PYTHON} queue.py
+    #&& ${PYTHON} rabbit_queue.py
 
 #WORKDIR /usr/local/blender/python/bin
 
@@ -66,7 +69,7 @@ WORKDIR DJANGO_BASE_DIR
 
 CMD ${PYTHON} /usr/local/queue.py
 #COPY . /usr/local/
-#CMD ["/usr/local/blender/${BLENDER_MAJOR}/python/bin/python3.7m", "/usr/local/queue.py"]
+#CMD ["/usr/local/blender/${BLENDER_MAJOR}/python/bin/python3.7m", "/usr/local/rabbit_queue.py"]
 #ENTRYPOINT ["/usr/local/blender/blender", "-b", "-noaudio"]
 
-# /usr/local/blender/${BLENDER_MAJOR}/python/bin/python3.7m /usr/local/queue.py
+# /usr/local/blender/${BLENDER_MAJOR}/python/bin/python3.7m /usr/local/rabbit_queue.py

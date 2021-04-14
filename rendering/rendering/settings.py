@@ -7,11 +7,23 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATABASES = {'default': dj_database_url.parse(os.getenv("DATABASE_URL", default='sqlite:///memo.sqlite'))}
+
+# db_from_env = dj_database_url.config()
+# DATABASES['default'].update(db_from_env)
+DATABASES['default']['CONN_MAX_AGE'] = 500
+# for tests
+#DATABASES['default']['TEST'] = os.path.join(BASE_DIR, 'db_test.sqlite3')
+
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1 localhost").split(" ")
-print(f'django settings: DEBUG={DEBUG}')
+#print(f'django settings: DEBUG={DEBUG}')
 
 CORS_ORIGIN_ALLOW_ALL = True
 
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8000"
+]
 if os.getenv('SERVER'):
     ALLOWED_HOSTS.append(os.getenv('SERVER'))
     CORS_ORIGIN_WHITELIST = [
@@ -38,9 +50,10 @@ INSTALLED_APPS = [
     'django_admin_listfilter_dropdown',
     'corsheaders',
     'social_django',  # https://github.com/omab/python-social-auth/blob/master/MIGRATING_TO_SOCIAL.md#settings
-    #'sslserver',
+    'sslserver',
     #'storages',
-    #'channels',
+    'channels',
+    'chat',
     'webapp',
     'furniture',
     'material',
@@ -88,6 +101,9 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 SESSION_CACHE_ALIAS = "default"
 
 WSGI_APPLICATION = 'rendering.wsgi.application'
+#ASGI_APPLICATION = 'rendering.asgi.application'
+ASGI_APPLICATION = 'rendering.routing.application'
+
 
 AUTHENTICATION_BACKENDS = [
     'social_core.backends.linkedin.LinkedinOAuth2',
@@ -110,6 +126,24 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+# https://channels.readthedocs.io/en/stable/topics/channel_layers.html
+# Channel layers allow you to talk between different instances of an application. They’re a useful part of making a distributed realtime application if you don’t want to have to shuttle all of your messages or events through a database.
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.getenv('REDIS_HOST', '127.0.0.1'), int(os.getenv('REDIS_PORT', '6379')))],
+        },
+    },
+}
+
+# Do Not Use In Production
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
+
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -147,12 +181,13 @@ EMAIL_PORT = 587
 LOGIN_URL = '/login/'
 
 # SSL/https/redirect/CSRF
-SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+#SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+#print(f"SECURE_SSL_REDIRECT = {SECURE_SSL_REDIRECT}")
 
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY=True
-CSRF_USE_SESSIONS=True
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
 
 X_ACCEL_REDIRECT_PREFIX = 'media'
 
@@ -182,7 +217,19 @@ LOGIN_REDIRECT_URL = "/"
 
 #PYTHONASYNCIODEBUG = 1
 
-MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "renders")   #'media/'
+#MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "renders")   #'media/'
+MEDIA_ROOT = os.getenv('RENDER_DIR', os.path.join(os.path.dirname(BASE_DIR), "renders"))
 MEDIA_URL = f'/media/'
 
 os.environ['DJANGO_BASE_DIR'] = BASE_DIR
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#SECURE_SSL_REDIRECT = True
+#SECURE_REDIRECT_EXEMPT = [r'^*+$']
+CSRF_COOKIE_SECURE=True
+CSRF_TRUSTED_ORIGINS=['127.0.0.1']
+
+
+#APPEND_SLASH=False

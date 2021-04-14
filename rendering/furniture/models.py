@@ -20,6 +20,7 @@ from django.db import models
 
 # DEFAULT_FILE_STORAGE.
 
+fs_models = FileSystemStorage(location='static/furniture/models')
 fs_blender = FileSystemStorage(location='static/furniture/models/blender')  #settings.RENDER_MACHINE['MODELS_DIR']
 fs_glb = FileSystemStorage(location='static/furniture/models/gltf')
 fs_sw = FileSystemStorage(location='static/furniture/models/sw')
@@ -36,6 +37,14 @@ class Model3D(models.Model):
     solidSource = models.FileField(storage=fs_sw, null=True, blank=True)  # source data for our job to convert blender
     updated = models.DateTimeField(auto_now=True, null=True)
     last_modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='%(class)s_model_modified')
+
+    # to do serve models separately
+    # @property
+    # def blend(self):
+    #     FileModel.objects.filter(model=self.pk).filter(type='blend')
+    #
+    # def glb(self):
+    #     FileModel.objects.filter(model=self.pk).filter(type='glb')
 
     @property
     def files(self):
@@ -54,11 +63,6 @@ class Model3D(models.Model):
         else:
             return "#"
 
-    # @property
-    # def natures(self):  # from all kinds
-    #     return .objects.filter(model_id=self.pk)
-
-
     @property
     def meshes(self):  # from all kinds
         return Mesh.objects.filter(model_id=self.pk).order_by('pk')
@@ -66,50 +70,8 @@ class Model3D(models.Model):
     def __str__(self):
         return "[{}] Model3D {} ".format(str(self.pk).zfill(2), self.name)
 
-    # def renders_glob(self, fin_onparts=[], pat_onparts=[] ):  # (part, texture_id)
-    #     s = ""
-    #     filter = []
-    #     for p in Mesh.objects.filter(model_id=self.pk).order_by('id'):
-    #         for m_p in fin_onparts:
-    #             if p.name in m_p[0]:
-    #                 filter.append((p.name, m_p[1]))
-    #                 s += f'{p.name}-{m_p[1]}*'
-    #                 break
-    #
-    #     root = pathlib.Path(settings.RENDER_DIR) / str(self.pk)
-    #     wild = '*/{done, posted,shadowed}/**.{jpg,png}'
-    #     tx_filtered = [str(f)[len(settings.RENDER_DIR) + 1:] for f in root.glob(wild, flags=pathlib.BRACE)]
-    #     if not pat_onparts:
-    #         return tx_filtered
-    #
-    #     tx_list = Finish.objects.all().values_list('id', 'pattern_id')
-    #     tx_dict = {}
-    #     for tx in tx_list:
-    #         tx_dict[tx[0]] = tx[1]
-    #
-    #     for i in range(len(tx_filtered) - 1, -1, -1):  # we have to from end to start for correct removing
-    #         pms = os.path.basename(tx_filtered[i]).split('.')[0].split('=')[1].split('_')  # todo save this in the render.Order.model
-    #         for pm in pms:
-    #             part, tex = pm.split('-')
-    #             pattern_id = tx_dict[int(tex)]  # rendered
-    #             for pp in pat_onparts:
-    #                 if pp[0] == part:
-    #                     if pp[1] != pattern_id:
-    #                         tx_filtered.pop(i)
-    #     return tx_filtered
-
     def makeglb_fromblend(self):
         pass
-        # import bpy
-        # from addon_utils import check, enable
-        # bpy.ops.wm.read_factory_settings(use_empty=True)
-        # for addon in ("io_export_dxf", "io_scene_gltf2"):
-        #     default, enabled = check(addon)
-        #     if not enabled:
-        #         enable(addon, default_set=True, persistent=True)
-        # bpy.ops.import_scene.gltf(filepath="/somepath")
-        # bpy.ops.export.dxf(filepath="/somefilepath")
-
 
     @property
     def api_info(self):
@@ -117,26 +79,25 @@ class Model3D(models.Model):
         data['id'] = self.pk
         data['name'] = self.name
         data['meshes'] = list(self.meshes.values_list('name',flat=True))
+        return data
 
-        # data['meshes'] = [{ "mesh": mesh.name,
-        #                     #"cover": list(mesh.cover.all().values_list('name', flat=True)),
-        #                     } for mesh in self.meshes]
-        return data #json.dumps(data, sort_keys=True, indent=4))
+# todo this later
+# class FileModel(models.Model):
+#     model = models.ForeignKey(Model3D, on_delete=models.PROTECT)
+#     file = models.FileField(storage=fs_models, null=True, blank=True)
+#     type = models.CharField(choices=[('blend', 'BLENDER'), ('glb', 'three.js')], max_length=8, default='blend')
+#     engine_version = models.CharField(max_length=8)
+#     comment = models.CharField(max_length=128, null=True, blank=True)
+#     updated = models.DateTimeField(auto_now=True, null=True, blank=True)
+#
+#     def __str__(self):
+#         return f"{self.engine_version}:{self.model.name}:{}"
+#     #request.upload_handlers = [ProgressBarUploadHandler(request)]
 
 
 class Mesh(models.Model):
     model = models.ForeignKey(Model3D, on_delete=models.CASCADE)
     name = models.CharField(max_length=16)
-    #optional = models.BooleanField(default=False)
-    #cover = models.ManyToManyField(Nature, blank=False)
-
-    #@property
-    #def patterns(self):
-    #    return Pattern.objects.filter(nature__in=self.cover.all())
-
-    #@property
-    #def finishes(self):
-    #    return Finish.objects.filter(pattern__nature__in=self.cover.all()).exclude(archive=1)
 
     def __str__(self):
         return f"{self.model.name}.{self.name}"  # it used in sketchbook - do not change
@@ -173,46 +134,6 @@ class Part(models.Model):
 
     def __str__(self):
         return f"[{self.model}]{self.displayName}"
-        #return f"[{self.meshes.all().first().model.name}] {self.displayName}"
-               #f"covered: {list(self.cover.all().values_list('name',flat=True))}"
-
-    # @property
-    # def cycle(self):
-    #     limits = Limitation.objects.filter(part_id=self.pk)
-    #     finishes = {}
-    #     if limits:
-    #         for lim in limits:
-    #             if lim.patterns:
-    #                 for p in lim.patterns.all():
-    #                     finishes[p.pk] = Finish.objects.filter(pattern=p.pk).exclude(archive=True).values_list('id', flat=True)
-    #             if lim.finishes:
-    #                 for f in lim.finishes.all():
-    #                     pid = f.pattern_id
-    #                     if pid not in finishes:
-    #                         finishes[pid] = []
-    #                     finishes[pid].append(f.pk)
-    #     else:
-    #         patterns = Pattern.objects.filter(nature__in=self.cover.all()).values_list('id', flat=True)
-    #         for p in patterns:
-    #             finishes[p] = Finish.objects.filter(pattern=p).exclude(archive=True).values_list('id', flat=True)
-    #     res = {
-    #         'meshes': self.meshes.all(),
-    #         'finishes': finishes,
-    #         'part_id': self.pk,
-    #         }
-    #     if self.colorChart:
-    #         res['colorChart_id'] = self.colorChart.id
-    #     return res
-
-    # @property
-    # def cycle_str(self):
-    #     meshes = ','.join([m.name for m in self.meshes.all()])
-    #     mats = ','.join([m.name for m in self.cover.all()])
-    #     limits = Limitation.objects.filter(part_id=self.pk)
-    #     if len(limits):
-    #         return f"{meshes}:[{' '.join([str(l) for l in limits])}]"
-    #     else:
-    #         return f"{meshes}:{mats}"
 
 
 class Product(models.Model):
@@ -226,8 +147,12 @@ class Product(models.Model):
                                height_field=None, width_field=None, max_length=100, null=True, blank=True)
 
     @property
+    def relRendersPath(self):
+        return str(self.model.id)
+
+    @property
     def rendersPath(self):
-        return os.path.join(settings.MEDIA_ROOT, str(self.model.id))
+        return os.path.join(settings.MEDIA_ROOT, self.relRendersPath)
 
     @property
     def qualities(self):
@@ -285,22 +210,14 @@ class Product(models.Model):
     @property
     def renders(self):
         root = pathlib.Path(settings.MEDIA_ROOT) / str(self.model.id)
-
         wild1 = '*/*.{jpg,png}' # posted
-        wild2 = 'orders/*/*/*.{jpg,png}' # done
-        #wild = '*/{done,posted,shadowed}/**.{jpg,png}'
-        #return [str(f)[len(settings.MEDIA_ROOT) + 1:].replace('\\', '/') for f in root.glob(wild, flags=pathlib.BRACE)]
         return [str(f)[len(settings.MEDIA_ROOT) + 1:].replace('\\', '/') for f in root.glob(wild1, flags=pathlib.BRACE)]
 
     @property
     def rendersInOrders(self):
-        root = pathlib.Path(settings.MEDIA_ROOT) / str(self.model.id)
+        root = pathlib.Path(settings.MEDIA_ROOT)/str(self.model.id)
         wild2 = 'orders/*/*/*.{jpg,png}'  # done
         return [str(f)[len(settings.MEDIA_ROOT) + 1:].replace('\\', '/') for f in root.glob(wild2, flags=pathlib.BRACE)]
-
-    # @property
-    # def rendersDiskSize(self):
-    #     return sum([order.diskSize for order in self.orders])  #kb->Mb
 
     def usedNatures(self, partname=''):
         natures = set()
@@ -359,10 +276,6 @@ class ProductKind(models.Model):
         from render.models import Order
         return Order.objects.filter(kind_id=self.id)
 
-    # def partNameByMeshName(self, mesh_name):
-    #     index = self.indexInOrderByMeshName(mesh_name)
-    #     return self.parts.all()[index].name if index >= 0 else ""
-
     def deep(self, mesh_name):
         for index, c in enumerate(self.cycles):
             for m in c.part.meshes.all():
@@ -376,13 +289,6 @@ class ProductKind(models.Model):
         for conf in Configuration.objects.filter(kind=self.pk):
             res |= set(conf.patterns)
         return list(res)
-
-    # def partByMeshName(self, mesh_name):
-    #     for index, c in enumerate(self.cycles):
-    #         for m in c.part.meshes.all():
-    #             if m.name == mesh_name:
-    #                 return c.part
-    #     return None
 
     def filename(self, finishes):
         f = self.product.model.name + '='
@@ -411,14 +317,13 @@ class ProductKind(models.Model):
         #data['render-template'] = 'config=' + '-'.join([ d["part"] + ":{}" for d in data['configuration'] if not d['colorchart']])
         return data #json.dumps(data, sort_keys=True, indent=4))
 
-
     def parse_rules(self, pairs, only_one=0):
         try:
             template = self.api_info['configuration']
             conf = {}
             parts = {}
             if len(pairs) != len(self.renderOrderParts):
-                return {"error": f"You must specify {len(self.renderOrderParts)} parts, not {len(pairs)}. use template: {self.renderOrderTemplate}"}
+                return {"error": f"You must specify {len(self.renderOrderParts)} parts in config, not {len(pairs)}. use template: {self.renderOrderTemplate}"}
             for pair in pairs:
                 p, m = pair.split(':')
                 if only_one:
@@ -473,24 +378,6 @@ class ProductKind(models.Model):
             print(repr(err))
             raise err
             return {"error": repr(err)}
-    # def config2post(self, fn):
-    #     pairs = fn.split("=")[1]
-    #     conf = {}
-    #     for pair in pairs.split('_'):
-    #         mesh, mat = pair.split("-")
-    #         if mat == 0:
-    #             continue
-    #         part = self.partByMeshName(mesh)
-    #         if not len(part):
-    #             return ''
-    #         if part in conf:
-    #             if mat != conf[part]:
-    #                 return ''
-    #         else:
-    #             conf[part] = mat
-    #     return '-'.join([f"{p}:{m}" for p, m in conf.items()])
-
-
 
     def usedNatures(self, partname=''):
         natures = set()
@@ -506,6 +393,23 @@ class ProductKind(models.Model):
         for c in Configuration.objects.filter(kind=self.pk):
             finishes |= set(c.finishes)
         return list(finishes)
+
+    # finishes is a map part.name -> finish_id
+    def set_defaultFinishes(self, finishes):
+        for conf in Configuration.objects.filter(kind=self.pk):
+        #for conf in self.parts.through.all():
+            if conf.part.name in finishes:
+                conf.set_defaultfinish(finishes[conf.part.name])
+
+    @property
+    def defaultFinishes(self):
+        res = {}
+        #for conf in self.parts.through.all():
+        for conf in Configuration.objects.filter(kind=self.pk):
+            res[conf.part.name] = conf.defaultFinish #conf.defaultFinish.id if conf.defaultFinish else 0
+        return res
+
+
 
 
 class Limitation(models.Model):
@@ -573,6 +477,13 @@ class Configuration(models.Model):
         if self.colorChart:
             return 1
         return len(self.finishes) + (1 if self.optional else 0)
+
+    def set_defaultfinish(self, finish_id):
+        if finish_id in [f.id for f in self.finishes]:
+            self.defaultFinish_id = finish_id
+            self.save()
+            return True
+        return False
 
     # def match(self, prev):
     #     suited = []

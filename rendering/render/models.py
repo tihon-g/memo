@@ -17,6 +17,7 @@ from material.models import Pattern, Finish
 # from furniture.models import Part
 # from material.models import Nature, Pattern, Finish
 from wcmatch import pathlib
+from render.utils import execute_wait
 
 
 # stdout
@@ -28,17 +29,17 @@ from wcmatch import pathlib
 #
 # p1 = Popen('python ex1.py' stdout=PIPE)
 # p2 = Popen('python ex2.py' stdin=p1.stdout)
-def execute_wait(com):
-    proc = subprocess.Popen(com, shell=False, stdout=subprocess.PIPE, universal_newlines=True)
-    # windows Warning : Using shell = True can be a security hazard
-    # Note Do not use stdout=PIPE or stderr=PIPE with this function as that can deadlock based on the child process output volume. Use Popen with the communicate() method when you need pipes.
-    # subprocess.run(["ls", "-l", "/dev/null"], capture_output=True)
-    for stdout_line in iter(proc.stdout.readline, ""):
-        yield stdout_line
-    proc.stdout.close()
-    return_code = proc.wait()
-    if return_code:
-        print(f"proc failed - {subprocess.CalledProcessError(return_code, com)}")
+# def execute_wait(com):
+#     proc = subprocess.Popen(com, shell=False, stdout=subprocess.PIPE, universal_newlines=True)
+#     # windows Warning : Using shell = True can be a security hazard
+#     # Note Do not use stdout=PIPE or stderr=PIPE with this function as that can deadlock based on the child process output volume. Use Popen with the communicate() method when you need pipes.
+#     # subprocess.run(["ls", "-l", "/dev/null"], capture_output=True)
+#     for stdout_line in iter(proc.stdout.readline, ""):
+#         yield stdout_line
+#     proc.stdout.close()
+#     return_code = proc.wait()
+#     if return_code:
+#         print(f"proc failed - {subprocess.CalledProcessError(return_code, com)}")
 
 
 class Quality(models.Model):
@@ -139,37 +140,54 @@ class Order(models.Model):
     worker = models.ForeignKey('Machine', null=True, blank=True, on_delete=models.SET_NULL)
     version = AutoIncVersionField()
 
+    @property
+    def model(self):
+        return self.kind.product.model
+
     def run(self):
         # sending to rabbitMQ
-        try:
-            import pika, json
-            credentials = pika.PlainCredentials(os.getenv('RABBIT_USER'), os.getenv('RABBIT_PASSWORD'))
-            parameters = pika.ConnectionParameters(os.getenv('RABBIT_HOST'), os.getenv('RABBIT_PORT'), os.getenv('RABBIT_VIRTUALHOST', default='/'), credentials=credentials)
-            connection = pika.BlockingConnection(parameters)
-            channel = connection.channel()
+        if os.getenv('RABBIT_HOST'):
+            # put message into rabbit
+            try:
+                import pika, json
+                credentials = pika.PlainCredentials(os.getenv('RABBIT_USER'), os.getenv('RABBIT_PASSWORD'))
+                parameters = pika.ConnectionParameters(os.getenv('RABBIT_HOST'), os.getenv('RABBIT_PORT'), os.getenv('RABBIT_VIRTUALHOST', default='/'), credentials=credentials)
+                connection = pika.BlockingConnection(parameters)
+                channel = connection.channel()
+                data = {'model': str(self.kind.product.model.blend), 'order_id': str(self.pk)}  # , 'rule': self.rule, 'quality': self.quality
+                channel.basic_publish(exchange='', routing_key='orders', body=json.dumps(data))
+                connection.close()
+                self.running = False  # put to queue
+                self.volume = self.N
+                self.save()
+                # if success - save it
+                return 'ok'
+            except Exception as err:
+                self.running = None
+                self.save()
+                print(f'MQTT ERROR {repr(err)}')
+                return repr(err)
+        else:
             self.running = False  # put to queue
             self.volume = self.N
             self.save()
-            data = {'model': str(self.kind.product.model.blend), 'order_id': str(self.pk)}  # , 'rule': self.rule, 'quality': self.quality
-            channel.basic_publish(exchange='', routing_key='orders', body=json.dumps(data))
-            connection.close()
-            # if success - save it
-            return 'ok'
-        except Exception as err:
-            self.running = None
-            self.save()
-            print(f'MQTT ERROR {repr(err)}')
-            return repr(err)
+            return "RABBIT_HOST missed in the env! but if queue command looks in db - it can be run because it in the queue"
 
     def cancel(self):
-        self.running = None
-        self.save()
+        try:
+            self.running = None
+            if not self.renders_done:
+                self.worker = None
+            self.save()
+        except:
+            print("concurrent access to order - can't cancel")
+            pass
 
     def cleanData(self):
         shutil.rmtree(self.rendersPath)
         self.renders_done = 0
+        self.worker = None
         self.save()
-
 
     def postData(self, copy_type):
         src = os.path.join(self.rendersPath, str(self.quality.id))
@@ -240,6 +258,9 @@ class Order(models.Model):
     def rendersPath(self):
         return os.path.join(self.kind.product.rendersPath, 'orders', str(self.pk))
 
+    @property
+    def relRendersPath(self):
+        return os.path.join(self.kind.product.relRendersPath, 'orders', str(self.pk))
     # @property
     # def donePath(self):
     #     return os.path.join(self.rendersPath, "done")

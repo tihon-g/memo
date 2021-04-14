@@ -9,3 +9,4 @@ django-concurrency
 django-cors-headers
 dj_database_url
 pika
+channels

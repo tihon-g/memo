@@ -1,12 +1,16 @@
 {% extends "header.html" %}
 {% load render_tags %}
 {% load static %}
+
 {% block content %}
 
-{% include "./rendering_server.html" %}
+{% include "./server_info.html" %}
 <div class="row">
-      <div class="col-12">
-        <ul class="nav nav-tabs card-header-tabs p-0 m-0">
+  <div class="col-12">
+     <div class="alert alert-info p-1 m-1" role="alert">
+         Orders for product <b>{{product}}</b> based on {{product.model}}
+     </div>
+     <ul class="nav nav-tabs card-header-tabs p-0 m-0">
         {% for order in product.orders %}
          <li class="nav-item">
             <a class="nav-link {%if forloop.first %} active {%endif%}" data-toggle="tab" id="head-tab-{{order.id}}"
@@ -22,7 +26,7 @@
             </a>
           </li>
         </ul>
-        <div class="tab-content" id="orders-content">
+     <div class="tab-content" id="orders-content">
         {% for order in product.orders %}
          <div role="tabpanel" class="tab-pane fade {%if forloop.first %}show active{%endif%}"
               aria-labelledby="head-tab-{{order.id}}"
@@ -30,20 +34,25 @@
            <div class="card-group">
              <div class="card" id="order-{{order.id]}">
                <div class="card-header">
-                 Order details for product kind: <b>{{order.kind}}</b>
+                  Details:
              </div>
-               <div class="card-body">
-                {{order}}
+               <div class="card-body p-1 m-1">
+                <ul class="list-group list-group-flush p-0 m-0">
+                    <li class="list-group-item"><b>{{order.kind}}</b></li>
+                    <li class="list-group-item">{{order.quality}}</li>
+                    <li class="list-group-item">{{order.rule}}</li>
+                    <li class="list-group-item">volume: {{order.volume}}</li>
+                  </ul>
              </div>
                <div class="card-footer">
                {% if request.user.is_staff %}
                    {% if order.running is None %} {# idle #}
                        {% if not order.diskSize %}
-                        <a href="{% url 'admin:render_order_change' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-secondary">Modify</a>
+                        <a class="btn btn-outline-secondary order idle empty" href="{% url 'admin:render_order_change' order.id %}" role="button" aria-pressed="true">Modify</a>
                        {% endif %}
-                     <a href="{% url 'render:order-run' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-success">Run (queue up)</a>
+                     <a class="btn btn-outline-success order idle" href="{% url 'render:order-run' order.id %}" role="button" aria-pressed="true" >Run (queue up)</a>
                    {% elif order.running == 1 %}
-                     <span class="badge badge-secondary">running:{{order.renders_done}}/{{order.N}}</span>
+                     <span class="badge badge-secondary order running">running:{{order.renders_done}}/{{order.N}}</span>
                      <a href="{% url 'render:order-stop' order.id %}" role="button" aria-pressed="true" class="btn btn-outline-danger">Stop</a>
                    {% else %}
                      <span class="badge badge-secondary">in queue: </span>
@@ -62,12 +71,10 @@
              </div>
              <div class="card" id="order-{{order.id]}-data">
               <div class="card-header">
-                  contents of <b>{{order.rendersPath}}</b> on server
-             </div>
+                  Contents: </div>
               <div class="card-body">
-                  {{order.quality}}
-              {% if order.renderDirs %}
-
+                  {{order.rendersPath}}
+                {% if order.renderDirs %}
                    <ul class="list-group list-group-flush">
                    {% for state, files_count in order.renderDirs.items %}
                     <li class="list-group-item">{{ state }}: {{files_count}}</li>
@@ -76,12 +83,12 @@
                   {% endif %}
              </div>
               <div class="card-footer">
-               Order data: {{order.renders|length}} renders, ({{order.diskSize|size_Mb}})
+                  Order data: <span class="renders-count">{{order.renders|length}}</span> renders, (<span class="size">{{order.diskSize|size_Mb}}</span>)
                 {% if order.diskSize %}
                   {% if order.renders|length %}
                 <a href="{% url 'render:order-sketchbook' pk=order.id %}" role="button" aria-pressed="true" class="btn btn-outline-primary">Order sketchbook</a>
                 <a href="#" data-href="{% url 'render:order-post-data' pk=order.id copy_type='copy' %}" data-toggle="modal" data-target="#confirm-post" role="button" aria-pressed="true" class="btn btn-outline-success">Post order data</a>
-                <div class="modal fade" id="confirm-post" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <!--div class="modal fade" id="confirm-post-{{order.id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
@@ -100,10 +107,10 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div-->
                 {% endif %}
-                <a href="#" data-href="{% url 'render:order-remove-data' pk=order.id %}" data-toggle="modal" data-target="#confirm-delete" role="button" aria-pressed="true" class="btn btn-outline-danger">Remove all data</a>
-                <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <a href="#" data-href="{% url 'render:order-remove-data' pk=order.id %}" data-toggle="modal" data-target="#confirm-delete" role="button" aria-pressed="true" class="btn btn-outline-danger" renders-count="{{order.renders|length}}" size="{{order.diskSize|size_Mb}}">Remove all data</a>
+                <!--div class="modal fade" id="confirm-delete-{{order.id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
@@ -114,11 +121,11 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                                <a class="btn btn-danger btn-ok">Delete</a>
+                                <a class="btn btn-danger btn-ok delete">Delete</a>
                             </div>
                         </div>
                     </div>
-                </div>
+                </div-->
                 {%endif%}
               </div>
              </div>
@@ -167,14 +174,64 @@
       </div>
     </div>
 
+<div class="modal fade" id="confirm-post" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                Update sketchbook: add files from order
+            </div>
+            <div class="modal-body">
+                <p><span class="renders">{{order.renders|length}}</span> renders </p>
+                <p>source: <span class="sourcepath">{{order.rendersPath}}</span></p>
+                <p>destination: <span class="destpath">{{order.kind.product.rendersPath}}</span></p>
+            </div>
+            <div class="modal-footer">
+                <a class="btn btn-success btn-ok sym">POST as symlinks</a>
+                <a class="btn btn-info btn-ok copy">COPY</a>
+                <a class="btn btn-danger btn-ok move">MOVE</a>
+                <button type="button" class="btn btn-dark" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                Are you sure to remove all data from this order?
+            </div>
+            <div class="modal-body">
+                <span class="modal-renders-count"></span> renders, Total size: <span class="size"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <a class="btn btn-danger btn-ok delete">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
-
 {% block extra_js %}
+<script src="js/server_info.js" type="text/javascript"></script>
 <script type="text/javascript">
 
 $('#confirm-delete').on('show.bs.modal', function(e) {
-    $(this).find('.btn-ok').attr('href', $(e.relatedTarget).data('href'));
+    //$(this).find('.btn-ok.delete').attr('href', $(e.relatedTarget).data('href'));
+    console.log(e.relatedTarget);
+    var dest = document.querySelector('.btn-ok.delete');
+    var modal = dest.closest('.modal-content');
+    var src = e.relatedTarget.closest('.');
+    dest.setAttribute('href', e.relatedTarget.getAttribute('data-href'));
+    modal.querySelector('span.modal-renders-count').innerHTML=e.relatedTarget.getAttribute('renders-count');
+    modal.querySelector('span.size').innerHTML=e.relatedTarget.getAttribute('size');
+    console.log('deleted');
+});
+
+$('.btn-ok').on('click', function() {
+  $('.modal').modal('hide')
 });
 
 $('#confirm-post').on('show.bs.modal', function(e) {
