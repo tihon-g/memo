@@ -1,5 +1,6 @@
 from django.urls import include, path
 from django.views.generic import RedirectView
+from sketchbook.urls import api_urlpatterns as sketchbook_api_urlpatterns
 
 from . import views
 
@@ -15,7 +16,7 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('social-auth/', include('social_django.urls', namespace="social")),
     path('api/', include([
-        path('/', views.api_index, name='api'),
+        path('', views.api_index, name='api'),
         path('models/', views.api_model_index, name='api-model-index'),
         path('products/',  include([
             path('', views.api_product_index, name='api-product-index'),
@@ -33,6 +34,6 @@ urlpatterns = [
         path('limitations', views.api_limitations, name='api-limitations'),
         path('colorcharts', views.api_colorcharts, name='api-colorcharts'),
         path('defaultfinish/<int:kind_id>', views.api_defaultfinish, name='api-defaultfinish'),
-
+        path('sketchbook/', include(sketchbook_api_urlpatterns))
     ]))
 ]

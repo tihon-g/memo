@@ -1,0 +1,128 @@
+/* LAYOUT */
+
+.product {
+    padding: 48px;
+
+    display: grid;
+    grid-column-gap: 80px;
+    max-width: 100%;
+
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: min-content 100px min-content;
+    grid-auto-flow: column;
+}
+
+.configuration {
+    grid-row: 3 / span 1;
+}
+
+.back-link,
+.back-link:link,
+.back-link:visited {
+    grid-row: 1;
+    grid-column: 1 / -1;
+
+    display: flex;
+    align-items: center;
+
+    margin-bottom: var(--spacing-sm);
+    color: var(--gray-light);
+}
+
+
+
+/* COMMON ELEMENTS */
+
+.sketchbook-select {
+    position: relative;
+}
+
+.sketchbook-select__input {
+    width: 100%;
+    padding: 12px 18px;
+    appearance: none;
+}
+
+.sketchbook-select__arrow {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    transform: translateY(-50%);
+
+    pointer-events: none;
+    color: var(--gray-dark);
+}
+
+.sketchbook-select__input:focus {
+    outline: 1px solid var(--gray-dark);
+}
+
+
+
+/* RENDER IMAGE */
+
+.render {
+    align-self: start;
+    position: relative;
+}
+
+.render__image {
+    width: 100%;
+    position: sticky;
+    top: 0;
+    transition: filter 1s;
+}
+
+.render__image.loading {
+    filter: blur(5px);
+}
+
+
+
+/* PALETTE */
+
+.palette {
+    display: grid;
+    grid-gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+}
+
+.finish-swatch-img {
+    width: 100%;
+
+    transition: all 0.2s;
+    outline: 2px solid transparent;
+}
+
+.finish-swatch-img:hover {
+    outline: 2px solid gray;
+}
+
+.finish-swatch-img.selected {
+    outline: 2px solid black;
+}
+
+
+
+/* ACCORDION */
+
+.accordion-item.collapsed {
+    display: none;
+}
+
+.accordion-item.expanded {
+    display: block;
+    margin: 32px 0;
+}
+
+.accordion-header {
+    font-size: 1.3rem;
+    font-weight: 300;
+
+    display: flex;
+    justify-content: space-between;
+
+    padding: 16px 0 12px;
+    border-bottom: 1px solid var(--gray-light);
+}
+

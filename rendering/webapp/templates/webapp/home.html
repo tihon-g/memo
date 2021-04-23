@@ -1,5 +1,5 @@
-{% extends "header.html" %}
-{% load static  %}
+{% extends "webapp/base.html" %}
+{% load static %}
 
 {% block title %}
 {% endblock %}
@@ -9,7 +9,8 @@
 {% endblock %}
 
 {% block content %}
-<h4> Welcome on Rendering Server!</h4>
-{% include "./render/server_info.html" %}
+	<h4> Welcome on Rendering Server!</h4>
+	{% include "render/server_info.html" %}
+
 <h5> You can use <a href='{% url "api" %}'>/api</a> without login and registration</h5>
 {% endblock %}

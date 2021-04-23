@@ -51,9 +51,14 @@ INSTALLED_APPS = [
     'corsheaders',
     'social_django',  # https://github.com/omab/python-social-auth/blob/master/MIGRATING_TO_SOCIAL.md#settings
     'sslserver',
+    'webpack_loader',
+    'rest_framework',
+    'django_filters',
+    'django_extensions',
     #'storages',
     'channels',
     'chat',
+    'sketchbook',
     'webapp',
     'furniture',
     'material',
@@ -137,14 +142,6 @@ CHANNEL_LAYERS = {
     },
 }
 
-# Do Not Use In Production
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer"
-#     }
-# }
-
-
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 # LANGUAGES = [('ru', 'Russian'),('en', 'English'),]
@@ -164,6 +161,7 @@ MATERIAL_SWATCH_DPI = 96
 MATERIAL_SWATCH_INCHSIZE = (4, 4)
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, a, 'static') for a in INSTALLED_APPS[-4:]]
+# STATICFILES_DIRS += [os.path.join(BASE_DIR, 'frontend/build/static/')]
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -233,3 +231,15 @@ CSRF_TRUSTED_ORIGINS=['127.0.0.1']
 
 
 #APPEND_SLASH=False
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'STATS_FILE': os.path.join(BASE_DIR, 'frontend/webpack-stats.json'),
+    }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+}

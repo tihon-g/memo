@@ -1,0 +1,35 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href='{% static "webapp/css/bootstrap.min.css" %}'>
+    <link rel="shortcut icon" type="image/png" href="{% static 'webapp/img/favicon.ico' %}"/>
+		<title>8images</title>
+
+    {% block head_js %}{% endblock %}
+</head>
+
+<body>
+		{% include 'webapp/header.html' %}
+    <div class="container-fluid">
+        {% block messages %}
+	        {% include 'webapp/messages.html' %}
+        {% endblock %}
+
+        {% block server %}{% endblock %}
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src='{% static "webapp/js/jquery-3.5.1.min.js" %}'></script>
+    <script type="module" src='{% static "webapp/js/all.min.js" %}'></script> <!--fontawesome-->
+    <script type="text/javascript" src='https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js'></script>
+
+    {% block server_js %}
+	    <script src="{% static "webapp/js/bootstrap.bundle.min.js" %}"></script>
+    {% endblock %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

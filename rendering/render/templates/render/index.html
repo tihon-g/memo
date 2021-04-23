@@ -1,9 +1,9 @@
-{% extends "header.html" %}
+{% extends "webapp/base.html" %}
 {% load static %}
 {% load render_tags %}
 
 {% block content %}
-{% include "./server_info.html" %}
+{% include "render/server_info.html" %}
 <div class="row">
   <div class="col-12">
     <div class="alert alert-info p-1 m-2" role="alert">

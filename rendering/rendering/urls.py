@@ -25,7 +25,7 @@ urlpatterns = [
     path('furniture/', include('furniture.urls', namespace='furniture')),
     path('render/', include('render.urls', namespace='render')),
     path('messages/', include('chat.urls', namespace='chat')),
-    #path('chat/', include('chat.urls')),
+    path('sketchbook/', include('sketchbook.urls', namespace='sketchbook')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

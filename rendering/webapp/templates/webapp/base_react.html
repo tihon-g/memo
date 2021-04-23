@@ -1,0 +1,8 @@
+{% extends "webapp/base.html" %}
+{% load render_bundle from webpack_loader %}
+
+{% block extra_js %}
+	{% render_bundle 'main' 'js' %}
+	{% render_bundle 'runtime-main' 'js' %}
+	{% render_bundle 'vendors~main' 'js' %}
+{% endblock %}

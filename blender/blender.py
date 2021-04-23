@@ -6,6 +6,9 @@ import bpy  # blender python - can run only from blender(
 from datetime import datetime
 import os, sys
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 start = datetime.now()
 
 bl_version = bpy.app.version_string.split(' ')[0]
@@ -182,7 +185,7 @@ def apply_mat(deep, m):
             shader.nodes['diffuse'].image = bpy.data.images[m.diffuse]
             shader.nodes['diffuse'].image.colorspace_settings.name = 'sRGB'
         else:
-            shader.nodes['diffuse'].image = ""
+            shader.nodes['diffuse'].image = None
     else:
         # todo use features.color?
         pass
@@ -222,6 +225,14 @@ def apply_mat(deep, m):
             shader.nodes["Hue Saturation Value"].inputs[1].default_value = m.features.diffuse_hsv.saturation
             shader.nodes["Hue Saturation Value"].inputs[2].default_value = m.features.diffuse_hsv.value
 
+
+def notify_render_created(path, order):
+    channel_layer = get_channel_layer()
+
+    message = {'type': 'render_created', 'render_path': path, 'order_id': order.id}
+    async_to_sync(channel_layer.group_send)('sketchbook', message)
+
+
 def do_and_save_render(cover, shadow=False):
     if cover in current_job['done_renders']:
         print(f'already done {cover}')
@@ -242,7 +253,11 @@ def do_and_save_render(cover, shadow=False):
         worker.render_made()
         order.renders_done += 1
         order.save()
-        print(f'!!saved|{order.renders_done}|{os.path.join(relPath, f)}|{difference}')
+
+        path = os.path.join(relPath, f)
+        notify_render_created(settings.MEDIA_URL + path, order)
+
+        print(f'!!saved|{order.renders_done}|{path}|{difference}')
     else:
         print("!!EXIT!! someone stop order. exit!")
         exit()
@@ -284,6 +299,9 @@ if __name__ == "__main__":
                     print("!! broken done log")
         print(f"!!Done renders before {len(done)}")
         current_job['done_renders'] = done
+        current_job['counter'] = 0
+    else:
+        current_job['done_renders'] = []
         current_job['counter'] = 0
 
     scene.render.engine = 'BLENDER_EEVEE'  # 'CYCLES'
