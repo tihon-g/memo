@@ -2,11 +2,11 @@ import React, {useState} from 'react';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
-export const AccordionItem = ({ label, isCollapsed, handleClick, children }) => {
+export const AccordionItem = ({ label, active, isCollapsed, handleClick, children }) => {
   return (
     <>
       <div className="accordion-header" onClick={handleClick}>
-        {label}
+        {active ? <span className={'accordion-header__label-active'}>{label}</span> : <>{label}</>}
         {isCollapsed ? <ChevronLeftIcon /> : <ExpandMoreIcon />}
       </div>
       <div
@@ -25,6 +25,7 @@ export const Accordion = ({ defaultIndex, onItemClick, children }) => {
   const changeItem = itemIndex => {
     if (typeof onItemClick === 'function') onItemClick(itemIndex);
     if (itemIndex !== bindIndex) setBindIndex(itemIndex);
+    if (itemIndex === bindIndex) setBindIndex(null);
   };
   const items = children.filter(item => item.type.name === 'AccordionItem');
 
@@ -32,10 +33,10 @@ export const Accordion = ({ defaultIndex, onItemClick, children }) => {
     <>
       {items.map(({ props }) => (
         <AccordionItem
+          {...props}
           isCollapsed={bindIndex !== props.index}
-          label={props.label}
           handleClick={() => changeItem(props.index)}
-          children={props.children}
+          key={props.index}
         />
       ))}
     </>

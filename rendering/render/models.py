@@ -49,6 +49,8 @@ class Quality(models.Model):
     engine = models.CharField(choices=[('BLENDER_EEVEE', 'eevee'), ('CYCLES', 'cycles')], max_length=13, default='BLENDER_EEVEE')
     compression = models.PositiveIntegerField(default=10, validators=[MinValueValidator(0), MaxValueValidator(100)])
     ext = models.CharField(choices=[('jpg', 'JPEG'), ('png', 'PNG')], max_length=13, default='jpg')
+    primary = models.BooleanField(default=False, blank=True)
+
     def __str__(self):
         return f"{self.ext} {self.size_x}x{self.size_y} with {self.samples} samples " # and {self.compression} compression"
 

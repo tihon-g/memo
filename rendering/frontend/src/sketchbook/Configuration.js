@@ -10,8 +10,12 @@ const Configuration = observer((props) => {
   return <Accordion>
     {
       state.configurations.filter(conf => conf.colorChart === null).map(conf => (
-        <AccordionItem key={conf.id} label={conf.part.name} index={conf.id}>
-          <Part {...conf.part} optional={conf.optional} defaultFinish={conf.defaultFinish} />
+        <AccordionItem key={conf.id}
+                       active={!!state.parts[conf.part.name]}
+                       label={conf.part.name}
+                       index={conf.id}>
+
+          <Part {...conf.part} optional={conf.optional} defaultFinish={conf.defaultFinish} removable={conf.removable} />
         </AccordionItem>
       ))
     }

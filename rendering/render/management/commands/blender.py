@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.conf import settings
+from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from render.models import Order, Machine
 from render.utils import execute_wait
@@ -14,6 +18,7 @@ from dotenv import load_dotenv
 # @click.argument('name')
 # def command(name):
 #     click.secho('Hello, {}'.format(name), fg='red')
+
 
 class Command(BaseCommand):
     help = 'Manage queue and run blender then need'
@@ -68,9 +73,13 @@ class Command(BaseCommand):
             os.environ['RENDER_ORDER_ID'] = str(o.id)
             print(f"start rendering order {o}, cmd={cmd}")
             last = ""
-            for s in execute_wait(cmd):
+            for line in execute_wait(cmd):
                 if settings.DEBUG:
-                    print(s)
+                    print(line)
+
+                if 'Rendering' in line:
+                    current, overall = re.search(r'(\d*)\s\/\s(\d*)', line).groups()
+                    notify_render_progress(int(current) / int(overall), order_id)
 
         except ValueError as e:
             print(f"errror: there is no model file for running order. Remove it from queue. {repr(e)} ")
@@ -79,3 +88,11 @@ class Command(BaseCommand):
             print(f"error: exception: {repr(e)}")
             #o.cancel()
 
+
+def notify_render_progress(progress, order_id):
+    channel_layer = get_channel_layer()
+
+    message = {'type': 'render_progress', 'progress': progress}
+    channel_name = cache.get(f'sketchbook_render_order_id_{order_id}')
+    if channel_name:
+        async_to_sync(channel_layer.send)(channel_name, message)

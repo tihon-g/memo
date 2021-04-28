@@ -11,18 +11,16 @@ from sketchbook.consumers import SketchbookConsumer
 application = ProtocolTypeRouter({
     # Websocket chat handler
     'websocket':
-        SessionMiddlewareStack(
-            AllowedHostsOriginValidator(
-                AuthMiddlewareStack(
-                    URLRouter(
-                        [
-                            re_path(r"^messages/(?P<username>[\w.@+-]+)$", ChatConsumer(), name='chat'),
-                            re_path(r"^api/render/$", RenderConsumer(), name='render'),
-                            re_path(r"^server_info$", ServerConsumer(), name='server'),
-                            re_path(r"^ws/sketchbook/$", SketchbookConsumer(), name='sketchbook'),
-                        ]
-                    )
-                ),
+        AllowedHostsOriginValidator(
+            AuthMiddlewareStack(
+                URLRouter(
+                    [
+                        re_path(r"^messages/(?P<username>[\w.@+-]+)$", ChatConsumer(), name='chat'),
+                        re_path(r"^api/render/$", RenderConsumer(), name='render'),
+                        re_path(r"^server_info$", ServerConsumer(), name='server'),
+                        re_path(r"^ws/sketchbook/$", SketchbookConsumer().as_asgi(), name='sketchbook'),
+                    ]
+                )
             ),
         ),
     'channel': ChannelNameRouter({

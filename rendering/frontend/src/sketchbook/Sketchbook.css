@@ -8,7 +8,12 @@
     max-width: 100%;
 
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: min-content 100px min-content;
+    grid-template-rows:
+            [back-link] min-content
+            [header] 100px
+            [render configuration] min-content
+            [footer-spacing] 128px;
+
     grid-auto-flow: column;
 }
 
@@ -39,14 +44,14 @@
 
 .sketchbook-select__input {
     width: 100%;
-    padding: 12px 18px;
+    padding: 10px 16px;
     appearance: none;
 }
 
 .sketchbook-select__arrow {
     position: absolute;
     top: 50%;
-    right: 18px;
+    right: 16px;
     transform: translateY(-50%);
 
     pointer-events: none;
@@ -57,24 +62,66 @@
     outline: 1px solid var(--gray-dark);
 }
 
+.btn-remove {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    font-weight: 400;
+
+    display: flex;
+    align-items: center;
+}
+
+.btn-remove:focus {
+    outline: none;
+}
 
 
 /* RENDER IMAGE */
 
 .render {
     align-self: start;
+    position: sticky;
+    top: 16px;
+}
+
+.render__container {
     position: relative;
 }
 
 .render__image {
     width: 100%;
-    position: sticky;
-    top: 0;
     transition: filter 1s;
 }
 
 .render__image.loading {
     filter: blur(5px);
+}
+
+
+
+/* LOADER */
+
+.loader {
+    position: sticky;
+    top: 0;
+    left: 0;
+    color: var(--gray-dark);
+    width: 100vw;
+    height: 10px;
+    margin-left: -15px;
+}
+
+.loader__root {
+    height: 8px !important;
+}
+
+.loader__color {
+    background-color: transparent !important;
+}
+
+.loader__bar-color {
+    background-color: var(--gray-light) !important;
 }
 
 
@@ -91,15 +138,22 @@
     width: 100%;
 
     transition: all 0.2s;
-    outline: 2px solid transparent;
+    outline: 3px solid transparent;
 }
 
 .finish-swatch-img:hover {
-    outline: 2px solid gray;
+    outline: 3px solid var(--gray-dark);
 }
 
 .finish-swatch-img.selected {
-    outline: 2px solid black;
+    outline: 3px solid black;
+}
+
+.finish-swatch-img--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-light);
 }
 
 
@@ -118,11 +172,18 @@
 .accordion-header {
     font-size: 1.3rem;
     font-weight: 300;
+    color: var(--gray-light);
 
     display: flex;
     justify-content: space-between;
 
     padding: 16px 0 12px;
     border-bottom: 1px solid var(--gray-light);
+
+    cursor: pointer;
+    user-select: none;
 }
 
+.accordion-header__label-active {
+    color: black;
+}

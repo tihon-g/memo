@@ -1,10 +1,9 @@
 from django.db.models import Q
-from rest_framework.fields import SerializerMethodField
-from rest_framework.relations import SlugRelatedField
-from rest_framework.serializers import ModelSerializer, ListSerializer
+from rest_framework.fields import SerializerMethodField, ReadOnlyField
+from rest_framework.serializers import ModelSerializer
 
-from furniture.models import Part, Configuration, Product, ProductKind, Limitation
-from material.models import Nature, Finish
+from furniture.models import Part, Configuration, Product, ProductKind
+from material.models import Nature, Finish, Pattern
 
 
 class FinishSerializer(ModelSerializer):
@@ -15,46 +14,61 @@ class FinishSerializer(ModelSerializer):
 
     class Meta:
         model = Finish
-        fields = '__all__'
+        fields = ['id', 'name', 'url']
 
 
-class NatureSerializer(ModelSerializer):
-    finishes = SerializerMethodField(method_name='get_limited_by_configuration_finishes')
+class PatternSerializer(ModelSerializer):
+    finishes = SerializerMethodField(method_name='get_limited_finishes')
 
-    def get_limited_by_configuration_finishes(self, obj):
+    def get_limited_finishes(self, obj):
         if 'configuration' in self.root.context:
             limitation = self.root.context['configuration'].limitation
 
             if limitation:
-                qs = obj.finishes.filter(Q(pattern__in=limitation.patterns.all()) |
-                                         Q(id__in=limitation.finishes.values_list('id', flat=True)))
+                filter_by_limitation = (
+                        Q(pattern__in=limitation.patterns.all()) |
+                        Q(id__in=limitation.finishes.values_list('id', flat=True))
+                )
+
+                qs = obj.finish_set.filter(filter_by_limitation, archive=False)
                 return FinishSerializer(qs, many=True).data
 
-        return FinishSerializer(obj.finishes.all(), many=True).data
+        return FinishSerializer(obj.finish_set.filter(archive=False), many=True).data
 
     class Meta:
-        model = Nature
+        model = Pattern
         fields = ['id', 'name', 'finishes']
 
 
-class LimitationSerializer(ModelSerializer):
+class NatureSerializer(ModelSerializer):
+    patterns = SerializerMethodField(method_name='get_limited_patterns')
+
+    def get_limited_patterns(self, obj):
+        if 'configuration' in self.root.context:
+            limitation = self.root.context['configuration'].limitation
+
+            if limitation:
+                qs = obj.pattern_set.filter(id__in=limitation.patterns.values_list('id', flat=True))
+                return PatternSerializer(qs, many=True).data
+
+        return PatternSerializer(obj.pattern_set.all(), many=True).data
+
     class Meta:
-        model = Limitation
-        fields = '__all__'
+        model = Nature
+        fields = ['id', 'name', 'patterns']
 
 
 class ProductPartSerializer(ModelSerializer):
-    natures = NatureSerializer(many=True)
-    meshes = SlugRelatedField(slug_field='name', many=True, read_only=True)
+    natures = NatureSerializer(source='cover', many=True)
 
     class Meta:
         model = Part
-        fields = '__all__'
+        fields = ['id', 'name', 'natures']
 
 
 class ConfigurationSerializer(ModelSerializer):
     part = SerializerMethodField()
-    limitation = LimitationSerializer()
+    removable = ReadOnlyField()
 
     def get_part(self, configuration):
         return ProductPartSerializer(instance=configuration.part,
@@ -62,7 +76,7 @@ class ConfigurationSerializer(ModelSerializer):
 
     class Meta:
         model = Configuration
-        fields = '__all__'
+        fields = ['id', 'part', 'limitation', 'removable', 'optional', 'defaultFinish', 'colorChart']
 
 
 class ProductKindSerializer(ModelSerializer):
@@ -70,7 +84,7 @@ class ProductKindSerializer(ModelSerializer):
 
     class Meta:
         model = ProductKind
-        fields = '__all__'
+        fields = ['id', 'name', 'configuration_set']
 
 
 class ProductSerializer(ModelSerializer):
@@ -78,4 +92,4 @@ class ProductSerializer(ModelSerializer):
 
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ['id', 'name', 'productkind_set']

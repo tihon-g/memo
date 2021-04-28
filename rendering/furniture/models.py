@@ -345,7 +345,7 @@ class ProductKind(models.Model):
                             if len(matches):
                                 conf[part] = matches[0].id  # find one by colorchart
                                 continue
-                            return {"error": f"there is no match finish for {part} based on {prev_part}:{conf[prev_part]} by colorchart {c.part.colorChart_id}"}
+                            return {"error": f"there is no match finish for {part} based on {prev_part}:{conf[prev_part]} by colorchart {c.colorChart_id}"}
                         else:
                             conf[part] = 0
                     else:
@@ -410,8 +410,6 @@ class ProductKind(models.Model):
         return res
 
 
-
-
 class Limitation(models.Model):
     # nature check
     name = models.CharField(max_length=32, null=True)
@@ -431,6 +429,14 @@ class Configuration(models.Model):
     limitation = models.ForeignKey(Limitation, on_delete=models.PROTECT,  blank=True, null=True)
     colorChart = models.ForeignKey(ColorMatchingChart, on_delete=models.PROTECT, blank=True, null=True)
     defaultFinish = models.ForeignKey(Finish, on_delete=models.PROTECT, blank=True, null=True)
+
+    @property
+    def removable(self):
+        for kind in self.kind.product.productkind_set.exclude(id=self.kind.id):
+            if not kind.configuration_set.filter(part__name=self.part.name).exists():
+                return True
+
+        return False
 
     @property
     def patterns(self):

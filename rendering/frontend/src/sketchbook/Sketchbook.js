@@ -6,7 +6,8 @@ import './Sketchbook.css';
 import Configuration from "./Configuration";
 import {SketchbookContext} from "../index";
 import classNames from "classnames";
-import Select from "./Select";
+import LinearProgress from "@material-ui/core/LinearProgress";
+
 
 const Sketchbook = observer(({productid}) => {
   const state = useContext(SketchbookContext)
@@ -16,33 +17,39 @@ const Sketchbook = observer(({productid}) => {
     state.openSocket()
   }, [productid])
 
-  useEffect(() => {
-    state.loadProductKindConfigurations()
-  }, [state.productKind])
+  const progressClasses = {
+    colorPrimary: 'loader__color',
+    barColorPrimary: 'loader__bar-color',
+    root: 'loader__root'
+  }
 
   return (
-    <div className={'product'}>
-      <a href={"../"} className={'back-link'}><ChevronLeftIcon />Back to list</a>
-      <h2>{state.product.name}</h2>
-
-      <img src={state.image} className={classNames('render__image', state.loadingRender && 'loading')}
-           alt={state.product.name} />
-
-      <div className={'configuration'}>
-        {state.product.productkind_set.length > 1 &&
-          <>
-            <h5>Kind</h5>
-            <Select value={state.productKind} onChange={(value) => state.productKind = value} className={'mb-md'}>
-              {state.product.productkind_set.map(item => (
-                <option value={item.id} key={item.id}>{item.name}</option>
-              ))}
-            </Select>
-          </>
+    <>
+      <div className={'loader'}>
+        {state.loadingRender &&
+            <LinearProgress color={"primary"} variant={state.progress !== null ? "determinate" : "indeterminate"}
+                            value={state.progress * 100} classes={progressClasses}/>
         }
-
-        <Configuration />
       </div>
-    </div>
+
+      <div className={'product'}>
+        <a href={"../"} className={'back-link'}><ChevronLeftIcon />Back to list</a>
+        <h2>{state.product.name}</h2>
+
+        <div className={'render'}>
+          <div className={'render__container'}>
+            <img src={state.image} className={classNames('render__image', state.loadingRender && 'loading')}
+                 alt={state.product.name} />
+
+          </div>
+        </div>
+
+
+        <div className={'configuration'}>
+          <Configuration />
+        </div>
+      </div>
+    </>
   );
 });
 

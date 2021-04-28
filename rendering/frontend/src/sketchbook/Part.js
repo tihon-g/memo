@@ -1,39 +1,28 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext} from 'react';
 import Palette from "./Palette";
 import {SketchbookContext} from "../index";
 import {observer} from "mobx-react-lite";
 import Select from "./Select";
 
-const Part = observer(({name, natures, optional, defaultFinish}) => {
+const Part = observer(({name, natures, optional, removable}) => {
   const state = useContext(SketchbookContext)
 
-  const [selectedNature, setSelectedNature] = useState(natures[0].id)
-  const [selectedFinish, setSelectedFinish] = useState(natures[0].finishes[0].id)
+  const onRemovePart = () => {
+    if (optional) { state.changeFinish(name, 0) }
+    if (removable) { state.changeFinish(name, undefined) }
+  }
 
-  const nature = natures.find(item => item.id === selectedNature)
-  const finishes = nature ? nature.finishes : []
-
-  useEffect(() => {
-    if (selectedNature !== 0) {
-      setSelectedFinish(natures[0].finishes[0].id)
-    }
-    else {
-      setSelectedFinish(0)
-    }
-  }, [selectedNature])
-
-  useEffect(() => {
-    state.changeFinish(name, selectedFinish)
-  }, [selectedFinish])
+  const selectedFinish = state.selectedFinish(name)
+  const patterns = state.patternsForCurrentPartNature(name)
 
   return (
     <div>
-      {(optional || natures.length > 1) &&
+      {natures.length > 1 &&
         <div className={'mb-md'}>
-          <h5>Material</h5>
 
-          <Select value={selectedNature} onChange={(value) => setSelectedNature(parseInt(value))}>
-            {optional && <option value={0}>None</option>}
+          <h5>Material</h5>
+          <Select value={state.selectedNature(name)}
+                  onChange={(value) => state.changeNature(name, parseInt(value))}>
             {natures.map(item => (
               <option value={item.id} key={item.id}>{item.name}</option>
             ))}
@@ -41,7 +30,28 @@ const Part = observer(({name, natures, optional, defaultFinish}) => {
         </div>
       }
 
-      {!!selectedNature && <Palette finishes={finishes} onChange={setSelectedFinish} selected={selectedFinish} />}
+      {patterns.length > 1 &&
+        <div className={'mb-md'}>
+
+            <h5>Pattern</h5>
+            <Select value={state.selectedPattern(name)}
+                    onChange={(value) => state.changePattern(name, parseInt(value))}>
+              {patterns.map(item => (
+                <option value={item.id} key={item.id}>{item.name}</option>
+              ))}
+            </Select>
+          </div>
+      }
+
+      {!!state.selectedNature(name) && !!state.selectedPattern(name) &&
+        <Palette finishes={state.finishesForCurrentPartPattern(name)}
+                 onChange={finish => state.changeFinish(name, finish)}
+                 selected={state.selectedFinish(name)}
+                 showEmpty={optional || removable}
+                 onEmptyClick={onRemovePart}
+                 isEmpty={(optional && selectedFinish === 0) || (removable && selectedFinish === undefined)}
+      />
+      }
     </div>
   );
 });

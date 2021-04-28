@@ -38,3 +38,5 @@ yarn-error.log*
 rendering/frontend/node_modules
 rendering/webapp/static
 webpack-stats.json
+
+rendering/celerybeat-schedule.db

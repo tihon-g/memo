@@ -8,6 +8,7 @@ import os, sys
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.core.cache import cache
 
 start = datetime.now()
 
@@ -226,11 +227,13 @@ def apply_mat(deep, m):
             shader.nodes["Hue Saturation Value"].inputs[2].default_value = m.features.diffuse_hsv.value
 
 
-def notify_render_created(path, order):
+def notify_render_created(path, order_id):
     channel_layer = get_channel_layer()
 
-    message = {'type': 'render_created', 'render_path': path, 'order_id': order.id}
-    async_to_sync(channel_layer.group_send)('sketchbook', message)
+    message = {'type': 'render_created', 'render_path': path, 'order_id': order_id}
+    channel_name = cache.get(f'sketchbook_render_order_id_{order_id}')
+    if channel_name:
+        async_to_sync(channel_layer.send)(channel_name, message)
 
 
 def do_and_save_render(cover, shadow=False):
@@ -242,7 +245,9 @@ def do_and_save_render(cover, shadow=False):
     print(f'!!start make and save render [{cover}] in {fullpath}')
     scene.render.filepath = fullpath
     started = datetime.now()
+
     bpy.ops.render.render(write_still=True)
+
     if order.running:
         if order.volume > 1:
             current_job['counter'] += 1
@@ -255,7 +260,7 @@ def do_and_save_render(cover, shadow=False):
         order.save()
 
         path = os.path.join(relPath, f)
-        notify_render_created(settings.MEDIA_URL + path, order)
+        notify_render_created(settings.MEDIA_URL + path, order.id)
 
         print(f'!!saved|{order.renders_done}|{path}|{difference}')
     else:

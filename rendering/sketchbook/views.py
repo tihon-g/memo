@@ -1,13 +1,13 @@
+from django.db.models import Q
 from django.views.generic import ListView, TemplateView
-from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView
 
-from furniture.models import Product, Part, Configuration
-from sketchbook.filters import ConfigurationFilter
-from sketchbook.serializers import ConfigurationSerializer, ProductSerializer
+from furniture.models import Product
+from sketchbook.serializers import ProductSerializer
 
 
 class ProductsListView(ListView):
-    queryset = Product.objects.all()
+    queryset = Product.objects.filter(~Q(type='toy'))
     template_name = 'sketchbook/products_list.html'
 
 
@@ -18,9 +18,3 @@ class ProductSketchbookView(TemplateView):
 class ProductAPIView(RetrieveAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
-
-
-class ConfigurationsAPIView(ListAPIView):
-    serializer_class = ConfigurationSerializer
-    queryset = Configuration.objects.all()
-    filterset_class = ConfigurationFilter

@@ -37,3 +37,7 @@ code {
 .mb-md {
   margin-bottom: var(--spacing-md);
 }
+
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}

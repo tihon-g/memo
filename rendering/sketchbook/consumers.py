@@ -6,54 +6,64 @@ from django.conf import settings
 
 from furniture.models import ProductKind
 from render.models import Order, Quality
+from django.core.cache import cache
+
+
+RENDER_ORDER_KEY = 'sketchbook_render_order_id_{}'
+CURRENT_ORDER_KEY = 'sketchbook_current_order_{}'
 
 
 class SketchbookConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'sketchbook'
-
-        await self.channel_layer.group_add(group=self.group_name, channel=self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.group_name,
-            self.channel_name
-        )
+        pass
 
     async def render_created(self, event):
-        if event['order_id'] == self.scope['session']['order_waiting']:
-            await self.send_json({'type': 'render_created', 'event': event})
+        await self.send_json({'type': 'render_created', 'event': event})
+
+    async def render_progress(self, event):
+        await self.send_json({'type': 'render_progress', 'event': event})
 
     @database_sync_to_async
     def create_order(self, data):
-        order = Order()
-        order.created_by = self.scope['user']
-        order.kind_id = data['kind']
-        order.quality_id = Quality.objects.first().id
-        order.rule = ';'.join([f'{part_name}:{finish}' for part_name, finish in data['parts'].items()])
-        order.running = False
-        order.save()
+        order = Order.objects.create(
+            kind_id=data['kind'],
+            quality=Quality.objects.get(primary=True),
+            rule=';'.join([f'{part_name}:{finish}' for part_name, finish in data['parts'].items()]),
+            running=False
+        )
+
+        cache.set(RENDER_ORDER_KEY.format(order.id), self.channel_name, 600)
+        cache.set(CURRENT_ORDER_KEY.format(self.channel_name), order.id, 600)
+
         return order.id
 
     @database_sync_to_async
     def check_if_render_exists(self, product_kind_id, parts):
         kind = ProductKind.objects.get(id=product_kind_id)
-        print([f'{part}:{finish}' for part, finish in parts.items()])
         filename = kind.parse_rules([f'{part}:{finish}' for part, finish in parts.items()], only_one=True)
+
         if 'file' not in filename:
             print(filename)
             return False, None
 
-        path = os.path.join(str(kind.product.id), '1', f'{filename["file"]}.jpg')  # TODO quality hardcoded
+        quality = Quality.objects.get(primary=True)
+        path = os.path.join(str(kind.product.id), str(quality.id), f'{filename["file"]}.jpg')
         return os.path.exists(os.path.join(settings.MEDIA_ROOT, path)), path
 
     async def receive_json(self, data, **kwargs):
         if data['type'] == 'get_render':
+            cache.delete(RENDER_ORDER_KEY.format(cache.get(CURRENT_ORDER_KEY.format(self.channel_name))))
+
             exists, path = await self.check_if_render_exists(data['kind'], data['parts'])
             if exists:
-                await self.send_json({'type': 'render_created', 'event': {'render_path': settings.MEDIA_URL + path}})
+                await self.send_json({
+                    'type': 'render_created',
+                    'event': {'render_path': settings.MEDIA_URL + path}
+                })
             else:
-                order_id = await self.create_order(data)
-                self.scope['session']['order_waiting'] = order_id
+                await self.create_order(data)
+
 
