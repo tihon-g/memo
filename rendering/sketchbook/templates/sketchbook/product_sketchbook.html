@@ -1,0 +1,7 @@
+{% extends "webapp/base_react.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block content %}
+	<div id="sketchbook" data-productid="{{ pk }}" data-mediaurl="{% get_media_prefix %}"></div>
+{% endblock %}

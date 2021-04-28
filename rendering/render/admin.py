@@ -39,7 +39,7 @@ class CameraAdmin(admin.ModelAdmin):
 
 @admin.register(models.Quality)
 class QualityAdmin(admin.ModelAdmin):
-    list_display = ('id', 'ext', 'engine', 'size_x', 'size_y', 'samples', 'compression')
+    list_display = ('id', 'ext', 'engine', 'size_x', 'size_y', 'samples', 'compression', 'primary')
     extra = 0
 
 # not working -( disabled

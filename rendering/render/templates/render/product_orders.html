@@ -1,10 +1,10 @@
-{% extends "header.html" %}
+{% extends "webapp/base.html" %}
 {% load render_tags %}
 {% load static %}
 
 {% block content %}
 
-{% include "./server_info.html" %}
+{% include "render/server_info.html" %}
 <div class="row">
   <div class="col-12">
      <div class="alert alert-info p-1 m-1" role="alert">
@@ -32,7 +32,7 @@
               aria-labelledby="head-tab-{{order.id}}"
                 id="tab-order-{{order.id}}">
            <div class="card-group">
-             <div class="card" id="order-{{order.id]}">
+             <div class="card" id="order-{{order.id}}">
                <div class="card-header">
                   Details:
              </div>
@@ -69,7 +69,7 @@
                {% endif %}
             </div>
              </div>
-             <div class="card" id="order-{{order.id]}-data">
+             <div class="card" id="order-{{order.id}}-data">
               <div class="card-header">
                   Contents: </div>
               <div class="card-body">

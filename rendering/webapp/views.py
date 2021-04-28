@@ -51,7 +51,7 @@ def index(request):
         # messages.add_message("post: " + request.POST)
         # data = .. to do pass back data from POST to form
 
-    return render(request, 'home.html', context)
+    return render(request, 'webapp/home.html', context)
 
 
 def get_client_ip(request):

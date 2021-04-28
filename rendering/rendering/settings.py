@@ -51,9 +51,14 @@ INSTALLED_APPS = [
     'corsheaders',
     'social_django',  # https://github.com/omab/python-social-auth/blob/master/MIGRATING_TO_SOCIAL.md#settings
     'sslserver',
+    'webpack_loader',
+    'rest_framework',
+    'django_filters',
+    'django_extensions',
     #'storages',
     'channels',
     'chat',
+    'sketchbook',
     'webapp',
     'furniture',
     'material',
@@ -126,24 +131,27 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
+
 # https://channels.readthedocs.io/en/stable/topics/channel_layers.html
 # Channel layers allow you to talk between different instances of an application. They’re a useful part of making a distributed realtime application if you don’t want to have to shuttle all of your messages or events through a database.
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [(os.getenv('REDIS_HOST', '127.0.0.1'), int(os.getenv('REDIS_PORT', '6379')))],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
 
-# Do Not Use In Production
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer"
-#     }
-# }
-
+CACHES = {
+    'default': {
+        'BACKEND': 'redis_cache.RedisCache',
+        'LOCATION': [REDIS_HOST + ":" + str(REDIS_PORT)],
+    }
+}
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -164,6 +172,7 @@ MATERIAL_SWATCH_DPI = 96
 MATERIAL_SWATCH_INCHSIZE = (4, 4)
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, a, 'static') for a in INSTALLED_APPS[-4:]]
+# STATICFILES_DIRS += [os.path.join(BASE_DIR, 'frontend/build/static/')]
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -233,3 +242,18 @@ CSRF_TRUSTED_ORIGINS=['127.0.0.1']
 
 
 #APPEND_SLASH=False
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'STATS_FILE': os.path.join(BASE_DIR, 'frontend/webpack-stats.json'),
+    }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+}
+
+CELERY_BROKER_URL = 'redis://' + REDIS_HOST + ':' + str(REDIS_PORT) + '/0'
+CELERY_RESULT_BACKEND = 'redis://' + REDIS_HOST + ':' + str(REDIS_PORT) + '/0'

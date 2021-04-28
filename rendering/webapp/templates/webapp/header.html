@@ -1,0 +1,84 @@
+{% load static %}
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<a class="navbar-brand myLogo" href="{% url 'homepage' %}"><img src="{% static 'webapp/img/favicon.jpg' %}" height="50"></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+        {% if user.is_authenticated %}
+      <li class="nav-item {%if nav_active == 'furniture'%}active{% endif %}">
+        <a class="nav-link" href="{% url 'furniture:index' %}">Furnitures</a>
+      </li>
+      <li class="nav-item {%if nav_active == 'material'%}active{% endif %}">
+        <a class="nav-link" href="{% url 'material:index' %}">Materials</a>
+      </li>
+      <li class="nav-item {%if nav_active == 'renders'%}active{% endif %}">
+        <a class="nav-link" href="{% url 'render:index' %}">Renders</a>
+      </li>
+      <li class="nav-item {%if nav_active == 'sketchbook'%}active{% endif %}">
+        <a class="nav-link" href="{% url 'sketchbook:index' %}">Sketchbook</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'render:scene' %}">Scenes</a>
+      </li>
+      {% else %}
+      <li class="nav-item">
+        <a class="nav-link" href="#">Demo</a>
+      </li>
+      {% endif %}
+
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="/profile" id="navbarDropdown2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Links
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdown2">
+          <a class="dropdown-item" href="http://8images.com">8images site</a>
+          <a class="dropdown-item" href="http://memofurniture.com">Memo site</a>
+          <a class="dropdown-item" href="https://memofurniture.com/sketchbook">Memo Sketchbook</a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="http://sioux.8images.com">Cloud Rendering server</a>
+          <a class="dropdown-item" href="https://github.com/tihon-g/memo">repo</a>
+          <a class="dropdown-item" href="http://sioux.8images.com/api/">API</a>
+          <a class="dropdown-item" href="https://documenter.getpostman.com/view/4677439/TVYF9zCv">API docs</a>
+
+          </div>
+      </li>
+
+      {% if user.is_superuser %}
+      <li class="nav-item">
+        <a class="nav-link " href="/admin">Administration</a>
+      </li>
+      {% endif %}
+    </ul>
+    <ul class="nav navbar-nav navbar-right pull-right">
+    {% if user.is_authenticated %}
+      {% for ass in backends.associated %}
+        {% if ass.provider == 'facebook' %}
+        <li class="nav-item">
+            <img src="{{ass.extra_data.picture.data.url}}" alt="" width="50" height="50" style="border-radius: 50%">
+        </li>
+        {% else %}
+
+        {%endif%}
+      {%endfor%}
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                {{user.username}}
+            </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+           <a class="dropdown-item" href="{% url 'profile' %}">Profile</a>
+            <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+        </div>
+        </li>
+    {% else %}
+        <li class="nav-item"><a href="{% url 'login' %}" class="btn btn-block btn-outline-success"> Login </a></li>
+        <li class="nav-item"><a href="#" class="btn btn-block btn-outline-danger"> <i class="fab fa-google"></i></a></li>
+        <li class="nav-item"><a href="#" class="btn btn-block btn-outline-info"> <i class="fab fa-twitter"></i></a></li>
+        <li class="nav-item"><a href="{% url 'social:begin' 'facebook' %}" class="btn btn-block btn-outline-primary"> <i class="fab fa-facebook-f"></i></a></li>
+        <li class="nav-item"><a href="{% url 'register' %}" class="btn btn-block btn-outline-dark"> Sign Up </a></li>
+    {% endif %}
+    </ul>
+  </div>
+</nav>

@@ -10,3 +10,4 @@ django-cors-headers
 dj_database_url
 pika
 channels
+django-sslserver==0.22

@@ -29,12 +29,12 @@ class Command(BaseCommand):
                 queue1 = Order.objects.filter(running=False).filter(worker=w)
                 queue2 = Order.objects.filter(running=False).filter(worker__isnull=True)
                 if not queue1 and not queue2:
-                    sleep(3)
+                    sleep(1)
                     continue
                 print(f'processing_orders_server')
                 for p in psutil.process_iter():
                     if os.path.basename(os.getenv('BLENDER')) == p.name():
-                        sleep(3)
+                        sleep(1)
                         break
                 else:  # no any blender processes
                     if queue1:
@@ -42,6 +42,9 @@ class Command(BaseCommand):
                     else:
                         call_command('blender', queue2.first().id)
                 sleep(3)
-            except:
-                pass
+            except Exception as e:
+                if type(e) is KeyboardInterrupt:
+                    raise
+                else:
+                    pass
         print(f'end processing_orders_server...')

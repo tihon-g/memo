@@ -1,4 +1,4 @@
-{% extends 'header.html' %}
+{% extends 'webapp/base.html' %}
 {% load static %}
 {% load product_tags %}
 {% load render_tags %}
@@ -14,11 +14,11 @@
      <p>variants:<span id="variants-count"></span></p>
     </div>
      <div id="kind-0">
-      {% include "sketchbook_leftpane.html" with parts=parts %}
+      {% include "render/sketchbook_leftpane.html" with parts=parts %}
      </div>
    </div>
    <div class="col-12 col-md-6">
-       {% include "sketchbook_rightpane.html" %}
+       {% include "render/sketchbook_rightpane.html" %}
    </div>
  </div>
 </form>
