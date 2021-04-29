@@ -27,11 +27,10 @@ export const Accordion = ({ defaultIndex, onItemClick, children }) => {
     if (itemIndex !== bindIndex) setBindIndex(itemIndex);
     if (itemIndex === bindIndex) setBindIndex(null);
   };
-  const items = children.filter(item => item.type.name === 'AccordionItem');
 
   return (
     <>
-      {items.map(({ props }) => (
+      {children.map(({ props }) => (
         <AccordionItem
           {...props}
           isCollapsed={bindIndex !== props.index}
