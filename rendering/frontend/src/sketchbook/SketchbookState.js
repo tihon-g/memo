@@ -71,7 +71,7 @@ class SketchbookState {
     // all parts listed in configuration defined and selected
     return isEqual(
       this.productKindConfigurations.filter(c => c.colorChart === null).map(c => c.part.name).sort(),
-      Object.keys(this.productKindSelectedParts).sort()
+      Object.entries(this.productKindSelectedParts).filter(([_, value]) => !!value).map(([key, _]) => key).sort()
     )
   }
 

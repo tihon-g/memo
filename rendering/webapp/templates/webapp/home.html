@@ -1,16 +1,45 @@
 {% extends "webapp/base.html" %}
-{% load static %}
+{% load static  %}
 
 {% block title %}
 {% endblock %}
 
-{% block server %}
-
-{% endblock %}
-
 {% block content %}
-	<h4> Welcome on Rendering Server!</h4>
-	{% include "render/server_info.html" %}
+	<div class="homepage container my-5">
+		<div class="feature">
+			<h2 class="feature__header">Modeling</h2>
+			<img src="{% static 'furniture/swatches/Chrod.Collection.jpg' %}" class="card-img-top" alt="Chrod" />
+			<p class="feature__text">We convert SolidWorks and AutoCad drawings into the models needed to produce photo realistic 3D renderings. Each product may consist of an unlimited number of parts and each part can be made of an unlimited number of materials, colors and textures.</p>
+		</div>
 
-<h5> You can use <a href='{% url "api" %}'>/api</a> without login and registration</h5>
+		<div class="feature">
+			<h2 class="feature__header">Materials</h2>
+			<img src="{% static 'webapp/img/materials.jpg' %}" class="card-img-top" alt="materials.jpg" />
+			<p class="feature__text">Our experienced artists create or adjust digital representations of materials such as fabrics, woods, metals or plastics to feel as if they are real and in accordance with your branding standards.</p>
+		</div>
+
+		<div class="feature">
+			<h2 class="feature__header">Lightning</h2>
+			<img src="{% static 'webapp/img/lightning.jpg' %}" class="card-img-top" alt="Chrod" />
+			<p class="feature__text">All the lighting is carefully adjusted to appear consistent throughout all the images and yet show even the slightest details, whether the image shows a white pattern on white or a black pattern on black.</p>
+		</div>
+
+		<div class="feature">
+			<h2 class="feature__header">Product Visualization Demo</h2>
+			<img src="{% static 'webapp/img/sketchbook.jpg' %}" class="card-img-top" alt="Chrod" />
+			<p class="feature__text">Memo Furniture is one of the top design companies in the world serving the contract furniture market. We helped them create millions of images for easy and fast visualization of colors, patterns, and 3D finishes from Solidworks files and plain fabric photos. For an interactive demo, visit <a href="{% url 'sketchbook:index' %}">Sketchbook</a>.</p>
+		</div>
+
+		<div class="feature">
+			<h2 class="feature__header">3D Rendering on Demand</h2>
+			<img src="{% static 'webapp/img/rendering.jpeg' %}" class="card-img-top" alt="Chrod" />
+			<p class="feature__text">Our software creates high-resolution 3D images in real time regardless of the complexity of products or the number of products in the scene.</p>
+		</div>
+
+		<div class="feature">
+			<h2 class="feature__header">API for Web Designers</h2>
+			<img src="{% static 'webapp/img/api.jpeg' %}" class="card-img-top" alt="Chrod" />
+			<p class="feature__text">To keep track of thousands of products and millions of images, designers can use our API to retrieve lists of available products, materials and textures, along with product configurations, part numbers and descriptions. This makes it easy to create and maintain an online catalog of all your images.</p>
+		</div>
+	</div>
 {% endblock %}

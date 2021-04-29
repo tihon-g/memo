@@ -1,0 +1,21 @@
+.homepage {
+    display: grid;
+    grid-row-gap: 64px;
+    justify-content: center;
+}
+
+.feature {
+    display: grid;
+    grid-row-gap: 16px;
+    grid-column-gap: 64px;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+}
+
+.feature__header {
+    grid-column: 1 / -1;
+}
+
+.feature__text {
+    font-size: 1.1rem;
+}
