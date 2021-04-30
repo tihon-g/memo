@@ -26,6 +26,9 @@ class SketchbookConsumer(AsyncJsonWebsocketConsumer):
     async def render_progress(self, event):
         await self.send_json({'type': 'render_progress', 'event': event})
 
+    async def render_error(self, event):
+        await self.send_json({'type': 'render_error', 'event': event})
+
     @database_sync_to_async
     def create_order(self, data):
         order = Order.objects.create(
