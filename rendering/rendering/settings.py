@@ -150,6 +150,9 @@ CACHES = {
     'default': {
         'BACKEND': 'redis_cache.RedisCache',
         'LOCATION': [REDIS_HOST + ":" + str(REDIS_PORT)],
+        'OPTIONS':  {
+            "PICKLE_VERSION": 4  # for blender python3.7 compatibility
+        }
     }
 }
 

@@ -159,6 +159,7 @@ def apply_patttern(deep, p):
                 shader.nodes["Hue Saturation Value"].inputs[2].default_value = p.features.diffuse_hsv.value
     except Exception as e:
         print(f"!!Exception {repr(e)}")
+        notify_render_error(order.id, repr(e))
         order.running = None
         order.save()
         return
@@ -231,6 +232,15 @@ def notify_render_created(path, order_id):
     channel_layer = get_channel_layer()
 
     message = {'type': 'render_created', 'render_path': path, 'order_id': order_id}
+    channel_name = cache.get(f'sketchbook_render_order_id_{order_id}')
+    if channel_name:
+        async_to_sync(channel_layer.send)(channel_name, message)
+
+
+def notify_render_error(order_id, exception_text):
+    channel_layer = get_channel_layer()
+
+    message = {'type': 'render_error', 'text': exception_text, 'order_id': order_id}
     channel_name = cache.get(f'sketchbook_render_order_id_{order_id}')
     if channel_name:
         async_to_sync(channel_layer.send)(channel_name, message)

@@ -47,7 +47,7 @@ class SketchbookState {
 
   get productKindSelectedParts() {
     const currentKindParts = this.productKindConfigurations.filter(c => c.colorChart === null).map(conf => conf.part.name)
-    return pickBy(this.parts, (value, key) => currentKindParts.includes(key))
+    return pickBy(this.parts, (value, key) => currentKindParts.includes(key) && value !== null)
   }
 
   get configurations() {
@@ -71,7 +71,7 @@ class SketchbookState {
     // all parts listed in configuration defined and selected
     return isEqual(
       this.productKindConfigurations.filter(c => c.colorChart === null).map(c => c.part.name).sort(),
-      Object.entries(this.productKindSelectedParts).filter(([_, value]) => !!value).map(([key, _]) => key).sort()
+      Object.entries(this.productKindSelectedParts).map(([key, value]) => key).sort()
     )
   }
 
@@ -210,6 +210,10 @@ class SketchbookState {
       }
       if (data['type'] === 'render_progress') {
         this.renderProgress(data['event']['progress'])
+      }
+      if (data['type'] === 'render_error') {
+        console.error(data['event']['text'])
+        this.renderLoaded(this.image)
       }
     }
 
