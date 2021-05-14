@@ -369,7 +369,7 @@ class ProductKind(models.Model):
                         if c.limitation.finishes.all():
                             found = (finish.id in list(c.limitation.finishes.all().values_list('id', flat=True)))
                         if not found:
-                            return f"finish {finish.id} from pattern {pattern.id} not suited on limitation {c.limitation} for part {part}. USE one of {[f.id for f in c.finishes]}"
+                            return {"error": f"finish {finish.id} from pattern {pattern.id} not suited on limitation {c.limitation} for part {part}. USE one of {[f.id for f in c.finishes]}"}
             ## all is OK, calc filename!
             meshes_str = '_'.join([f"{mesh.name}-" + (f"{conf[parts[mesh.name]]}" if mesh.name in parts else "0") for mesh in self.product.model.meshes])
             return {"file": f"{self.product.model.name}={meshes_str}"}  # without .jpg/ .png

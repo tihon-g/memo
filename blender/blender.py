@@ -6,10 +6,6 @@ import bpy  # blender python - can run only from blender(
 from datetime import datetime
 import os, sys
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.core.cache import cache
-
 start = datetime.now()
 
 bl_version = bpy.app.version_string.split(' ')[0]
@@ -30,6 +26,7 @@ django.setup()
 
 from django.conf import settings
 from furniture.models import Product, Model3D, Configuration
+from sketchbook.consumers import notify_render_created, notify_render_error
 from render.models import Order, Machine#, Shot
 
 F_DIR = os.path.join(settings.STATIC_ROOT, 'material', 'finishes').replace("/", os.sep)
@@ -228,24 +225,6 @@ def apply_mat(deep, m):
             shader.nodes["Hue Saturation Value"].inputs[2].default_value = m.features.diffuse_hsv.value
 
 
-def notify_render_created(path, order_id):
-    channel_layer = get_channel_layer()
-
-    message = {'type': 'render_created', 'render_path': path, 'order_id': order_id}
-    channel_name = cache.get(f'sketchbook_render_order_id_{order_id}')
-    if channel_name:
-        async_to_sync(channel_layer.send)(channel_name, message)
-
-
-def notify_render_error(order_id, exception_text):
-    channel_layer = get_channel_layer()
-
-    message = {'type': 'render_error', 'text': exception_text, 'order_id': order_id}
-    channel_name = cache.get(f'sketchbook_render_order_id_{order_id}')
-    if channel_name:
-        async_to_sync(channel_layer.send)(channel_name, message)
-
-
 def do_and_save_render(cover, shadow=False):
     if cover in current_job['done_renders']:
         print(f'already done {cover}')
@@ -278,74 +257,79 @@ def do_and_save_render(cover, shadow=False):
         exit()
 
 if __name__ == "__main__":
-    # hide not covered meshes
-    for mesh in order.kind.product.model.meshes:
-        if order.kind.deep(mesh.name) < 0:
-            print(f'{mesh.name} will be hidden')
-            scene.objects[mesh.name].hide_render = True
-    materials = []  # array for material on every deep level
-    for cycle in order.cycles:
-        if len(cycle['meshes']) > 1:
-            set_same_shader_for_all_meshes_in_cycle(cycle['meshes'])
-        materials.append(scene.objects[cycle['meshes'][0]].data.materials[0])
-
-    if order.volume > 1:
-        # manage big orders
-        relPath = os.path.join(order.relRendersPath, str(order.quality.id))
-    else:
-        relPath = os.path.join(order.kind.product.relRendersPath, str(order.quality.id))  # direct in MEDIA_ROOT
-    dest_folder = os.path.join(os.getenv('RENDER_DIR'), relPath)
     try:
-        os.makedirs(dest_folder)
-    except:
-        pass
-    if order.volume > 1:
-        done = []  # list of ready renders for this order.
-        if not os.path.exists(order.doneLog['url']):  # start order from the begining
-            with open(order.doneLog['url'], 'w') as data_renders_log:  # save output directory & render options
-                data_renders_log.write('\t'.join([datetime.now().strftime("%Y-%m-%d at %H:%M"), f"{order.kind.id}", order.rendersPath]) + '\n')  # for history
-        else:  # job resume
-            with open(order.doneLog['url']) as data_renders_log:
-                done = data_renders_log.read().split('\n')[1:]  # remove history line from top
-                if len(done):
-                    if len(done[-1]) == 0:
-                        done.pop(-1)  # remove last empty line
-                else:
-                    print("!! broken done log")
-        print(f"!!Done renders before {len(done)}")
-        current_job['done_renders'] = done
-        current_job['counter'] = 0
-    else:
-        current_job['done_renders'] = []
-        current_job['counter'] = 0
+        # hide not covered meshes
+        for mesh in order.kind.product.model.meshes:
+            if order.kind.deep(mesh.name) < 0:
+                print(f'{mesh.name} will be hidden')
+                scene.objects[mesh.name].hide_render = True
+        materials = []  # array for material on every deep level
+        for cycle in order.cycles:
+            if len(cycle['meshes']) > 1:
+                set_same_shader_for_all_meshes_in_cycle(cycle['meshes'])
+            materials.append(scene.objects[cycle['meshes'][0]].data.materials[0])
 
-    scene.render.engine = 'BLENDER_EEVEE'  # 'CYCLES'
-    scene.render.resolution_x = order.quality.size_x
-    scene.render.resolution_y = order.quality.size_y
-    scene.render.image_settings.file_format = 'JPEG' if order.quality.ext != 'png' else 'PNG'
-    scene.eevee.taa_render_samples = order.quality.samples
-    scene.render.image_settings.compression = order.quality.compression if order.quality.compression is not None else 10
-    # compression
-    # Amount of time to determine best compression: 0 = no compression with fast file output, 100 = maximum lossless compression with slow file output
-    # int in [0, 100], default 15
-
-    # stop_file - good choice to pause rendering
-    if order.volume > 1:
-        open(stop_file, 'w').close()
-    print(f"!! scene preparations completed. Volume={order.volume}")
-    do_rendering(0, "")  # recursive magic!
-    print("do_rendering completed")
-    if order.volume > 1:
-        os.remove(stop_file) if os.path.exists(stop_file) else None  # work done - we don't need stop file
-        if current_job['counter'] > 0:
-            print(f"!! finish - Now we make {current_job['counter']} renders. There are {len(current_job['done_renders'])} in done log")
+        if order.volume > 1:
+            # manage big orders
+            relPath = os.path.join(order.relRendersPath, str(order.quality.id))
         else:
-            print("!! finish - nothing made")
-        with open(os.path.join(order.rendersPath, 'finish'), 'w') as fin:
-            fin.write(str(current_job['counter']))
-        order.status = f"{current_job['counter']} in {datetime.now() - start} s"
-        print(f"!! order status: {order.status}")
-    else:
-        order.renders_posted = 1
-    order.running = None
-    order.save()
+            relPath = os.path.join(order.kind.product.relRendersPath, str(order.quality.id))  # direct in MEDIA_ROOT
+        dest_folder = os.path.join(os.getenv('RENDER_DIR'), relPath)
+        try:
+            os.makedirs(dest_folder)
+        except:
+            pass
+        if order.volume > 1:
+            done = []  # list of ready renders for this order.
+            if not os.path.exists(order.doneLog['url']):  # start order from the begining
+                with open(order.doneLog['url'], 'w') as data_renders_log:  # save output directory & render options
+                    data_renders_log.write('\t'.join([datetime.now().strftime("%Y-%m-%d at %H:%M"), f"{order.kind.id}", order.rendersPath]) + '\n')  # for history
+            else:  # job resume
+                with open(order.doneLog['url']) as data_renders_log:
+                    done = data_renders_log.read().split('\n')[1:]  # remove history line from top
+                    if len(done):
+                        if len(done[-1]) == 0:
+                            done.pop(-1)  # remove last empty line
+                    else:
+                        print("!! broken done log")
+            print(f"!!Done renders before {len(done)}")
+            current_job['done_renders'] = done
+            current_job['counter'] = 0
+        else:
+            current_job['done_renders'] = []
+            current_job['counter'] = 0
+
+        scene.render.engine = 'BLENDER_EEVEE'  # 'CYCLES'
+        scene.render.resolution_x = order.quality.size_x
+        scene.render.resolution_y = order.quality.size_y
+        scene.render.image_settings.file_format = 'JPEG' if order.quality.ext != 'png' else 'PNG'
+        scene.eevee.taa_render_samples = order.quality.samples
+        scene.render.image_settings.compression = order.quality.compression if order.quality.compression is not None else 10
+        # compression
+        # Amount of time to determine best compression: 0 = no compression with fast file output, 100 = maximum lossless compression with slow file output
+        # int in [0, 100], default 15
+
+        # stop_file - good choice to pause rendering
+        if order.volume > 1:
+            open(stop_file, 'w').close()
+        print(f"!! scene preparations completed. Volume={order.volume}")
+        do_rendering(0, "")  # recursive magic!
+        print("do_rendering completed")
+        if order.volume > 1:
+            os.remove(stop_file) if os.path.exists(stop_file) else None  # work done - we don't need stop file
+            if current_job['counter'] > 0:
+                print(f"!! finish - Now we make {current_job['counter']} renders. There are {len(current_job['done_renders'])} in done log")
+            else:
+                print("!! finish - nothing made")
+            with open(os.path.join(order.rendersPath, 'finish'), 'w') as fin:
+                fin.write(str(current_job['counter']))
+            order.status = f"{current_job['counter']} in {datetime.now() - start} s"
+            print(f"!! order status: {order.status}")
+        else:
+            order.renders_posted = 1
+        order.running = None
+        order.save()
+    except Exception as e:
+        print(repr(e), flush=True)
+        notify_render_error(order_id=order_id, exception_text=repr(e))
+

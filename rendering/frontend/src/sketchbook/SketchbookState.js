@@ -1,7 +1,7 @@
 import {makeAutoObservable} from "mobx"
 import isEqual from "lodash/isEqual";
 import pickBy from "lodash/pickBy";
-import uniqBy from "lodash/uniqBy";
+import cloneDeep from "lodash/cloneDeep";
 import {getProduct} from "../api/api";
 
 const WEB_SOCKET_URL = '/ws/sketchbook/';
@@ -51,16 +51,28 @@ class SketchbookState {
   }
 
   get configurations() {
-    let configurations = []
+    let configurationsArr = []
+    let configurationsObj = {}
 
-    // current product kind configurations has priority over others
-    if (this.currentProductKind) { configurations.push(...this.currentProductKind.configuration_set) }
+    // collecting all configurations, current product kind configurations has priority over others
+    if (this.currentProductKind) { configurationsArr.push(...this.currentProductKind.configuration_set) }
+    this.productKinds.forEach(kind => configurationsArr.push(...kind.configuration_set))
 
-    this.productKinds.forEach(kind => configurations.push(...kind.configuration_set))
+    // merge configurations with equal part name to implicitly set product kinds, natures are getting stacked
+    configurationsArr.forEach(conf => {
+      const name = conf.part.name
 
-    configurations.sort((a, b) => a.id - b.id)
+      if (name in configurationsObj) {
+        conf.part.natures.forEach(nature => {
+          if (!configurationsObj[name].part.natures.find(n => nature.id === n.id)) {
+            configurationsObj[name].part.natures.push(nature)
+          }
+        })
+      }
+      else { configurationsObj[name] = cloneDeep(conf) }
+    })
 
-    return uniqBy(configurations, conf => conf.part.name)
+    return Object.values(configurationsObj).sort((a, b) => a.id - b.id)
   }
 
   get productParts() {
@@ -178,11 +190,11 @@ class SketchbookState {
 
   changeNature(partName, selectedNature) {
     this.natures[partName] = selectedNature
+    this.changeProductKindOnNatureChange(partName, selectedNature)
 
     const patterns = this.patternsForCurrentPartNature(partName)
     if (patterns.length > 0) {
       this.changePattern(partName, this.defaultPattern(partName))
-      // this.changeFinish(partName, this.defaultFinish(partName, natureObj))
     }
   }
 
@@ -192,8 +204,22 @@ class SketchbookState {
       return finish !== undefined ? findedKind : !findedKind;
     }).map(kind => kind.id)
 
-    if (!productKindsWithPart.includes(this.productKind)) {
-      this.productKind = productKindsWithPart[0];
+    this.changeProductKindFromAvailable(productKindsWithPart)
+  }
+
+  changeProductKindOnNatureChange(partName, nature) {
+    const productKindsWithNature = this.productKinds.filter(kind => {
+      return kind.configuration_set.find(conf => {
+        return conf.part.name === partName && conf.part.natures.find(n => n.id === nature)
+      })
+    }).map(kind => kind.id)
+
+    this.changeProductKindFromAvailable(productKindsWithNature)
+  }
+
+  changeProductKindFromAvailable(available) {
+    if (!available.includes(this.productKind)) {
+      this.productKind = available[0];
       this.parts = Object.assign(this.productKindDefaultParts, this.productKindSelectedParts);
     }
   }
