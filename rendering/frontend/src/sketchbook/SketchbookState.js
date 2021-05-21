@@ -142,6 +142,12 @@ class SketchbookState {
     return this.part(partName).natures.find(n => n.id === this.selectedNature(partName))
   }
 
+  finish(partName) {
+    return this.nature(partName)
+      .patterns.find(pattern => pattern.id === this.selectedPattern(partName))
+      .finishes.find(finish => finish.id === this.selectedFinish(partName))
+  }
+
 
 
   // ACTIONS

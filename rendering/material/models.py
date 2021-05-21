@@ -1,4 +1,5 @@
 import os
+import re
 
 from django.conf import settings
 from django.core.validators import validate_comma_separated_integer_list
@@ -150,6 +151,15 @@ class Finish(models.Model):
     url = models.CharField(max_length=96, null=True, blank=True)  #diffuse
     #ordinal = models.PositiveIntegerField(null=True, blank=True)
     archive = models.BooleanField(default=False)
+
+    @property
+    def display_name(self):
+        # remove acronym at the beginning of finish name
+        name = re.sub(r'^([A-Z]{2,}\s)', '', self.name)
+
+        if self.pattern.nature.name == 'fabric':
+            return f'{self.squ} {name}'
+        return name
 
     @property
     def diffuse(self):

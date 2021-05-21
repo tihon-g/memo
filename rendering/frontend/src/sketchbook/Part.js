@@ -42,6 +42,7 @@ const Part = observer(({name, natures, optional, removable}) => {
             </Select>
           </div>
       }
+      {!!state.selectedFinish(name) && <h5>{state.finish(name).display_name}</h5>}
 
       {!!state.selectedNature(name) && !!state.selectedPattern(name) &&
         <Palette finishes={state.finishesForCurrentPartPattern(name)}

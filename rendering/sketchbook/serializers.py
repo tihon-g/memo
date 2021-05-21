@@ -1,5 +1,5 @@
 from django.db.models import Q
-from rest_framework.fields import SerializerMethodField, ReadOnlyField
+from rest_framework.fields import SerializerMethodField, ReadOnlyField, CharField
 from rest_framework.serializers import ModelSerializer
 
 from furniture.models import Part, Configuration, Product, ProductKind
@@ -8,13 +8,14 @@ from material.models import Nature, Finish, Pattern
 
 class FinishSerializer(ModelSerializer):
     url = SerializerMethodField()
+    display_name = CharField()
 
     def get_url(self, obj):
         return f'/static/material/swatches/swatch_{obj.id}.jpg'
 
     class Meta:
         model = Finish
-        fields = ['id', 'name', 'url']
+        fields = ['id', 'url', 'display_name']
 
 
 class PatternSerializer(ModelSerializer):
