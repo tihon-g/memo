@@ -156,6 +156,11 @@
     color: var(--gray-light);
 }
 
+.finish-swatch-tooltip {
+    opacity: 1 !important;
+    font-size: 0.9rem !important;
+}
+
 
 
 /* ACCORDION */
