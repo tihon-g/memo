@@ -34,7 +34,7 @@ class PatternSerializer(ModelSerializer):
                 qs = obj.finish_set.filter(filter_by_limitation, archive=False)
                 return FinishSerializer(qs, many=True).data
 
-        return FinishSerializer(obj.finish_set.filter(archive=False), many=True).data
+        return FinishSerializer(obj.finish_set.filter(archive=False).order_by('squ', 'name', 'id'), many=True).data
 
     class Meta:
         model = Pattern
