@@ -154,10 +154,15 @@ class Finish(models.Model):
 
     @property
     def display_name(self):
+        if not self.name and not self.squ:
+            return str(self.id)
+        elif not self.name:
+            return self.squ
+
         # remove acronym at the beginning of finish name
         name = re.sub(r'^([A-Z]{2,}\s)', '', self.name)
 
-        if self.pattern.nature.name == 'fabric':
+        if self.pattern.nature.name == 'fabric' and not self.squ.lstrip('0') == name:
             return f'{self.squ} {name}'
         return name
 

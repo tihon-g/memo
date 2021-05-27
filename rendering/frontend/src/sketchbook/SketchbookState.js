@@ -72,7 +72,7 @@ class SketchbookState {
       else { configurationsObj[name] = cloneDeep(conf) }
     })
 
-    return Object.values(configurationsObj).sort((a, b) => a.id - b.id)
+    return Object.values(configurationsObj).sort((a, b) => a.part.id - b.part.id)
   }
 
   get productParts() {

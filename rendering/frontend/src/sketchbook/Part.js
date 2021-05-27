@@ -31,7 +31,7 @@ const Part = observer(({name, natures, optional, removable}) => {
       }
 
       {patterns.length > 1 &&
-        <div className={'mb-md'}>
+        <div className={'mb-sm'}>
 
             <h5>Pattern</h5>
             <Select value={state.selectedPattern(name)}
@@ -42,7 +42,9 @@ const Part = observer(({name, natures, optional, removable}) => {
             </Select>
           </div>
       }
-      {!!state.selectedFinish(name) && <h5>{state.finish(name).display_name}</h5>}
+      <div className={'current-finish'}>
+        {!!state.selectedFinish(name) ? state.finish(name).display_name : <>&nbsp;</>}
+      </div>
 
       {!!state.selectedNature(name) && !!state.selectedPattern(name) &&
         <Palette finishes={state.finishesForCurrentPartPattern(name)}
