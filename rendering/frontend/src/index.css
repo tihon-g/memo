@@ -4,6 +4,7 @@
   --gray-light: #c2c2c2;
   --gray-dark: #717171;
 
+  --spacing-xs: 0.25rem;
   --spacing-sm: 1rem;
   --spacing-md: 3rem;
   --spacing-lg: 5rem;
@@ -30,6 +31,10 @@ code {
 
 
 /* HELPERS */
+.mb-xs {
+  margin-bottom: var(--spacing-xs);
+}
+
 .mb-sm {
   margin-bottom: var(--spacing-sm);
 }
