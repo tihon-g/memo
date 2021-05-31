@@ -16,10 +16,9 @@ const Part = observer(({name, natures, optional, removable}) => {
   const patterns = state.patternsForCurrentPartNature(name)
 
   return (
-    <div>
+    <div className={'part'}>
       {natures.length > 1 &&
-        <div className={'mb-md'}>
-
+        <div className={'mb-sm'}>
           <h5>Material</h5>
           <Select value={state.selectedNature(name)}
                   onChange={(value) => state.changeNature(name, parseInt(value))}>
@@ -32,7 +31,6 @@ const Part = observer(({name, natures, optional, removable}) => {
 
       {patterns.length > 1 &&
         <div className={'mb-sm'}>
-
             <h5>Pattern</h5>
             <Select value={state.selectedPattern(name)}
                     onChange={(value) => state.changePattern(name, parseInt(value))}>
@@ -42,6 +40,7 @@ const Part = observer(({name, natures, optional, removable}) => {
             </Select>
           </div>
       }
+
       <div className={'current-finish'}>
         {!!state.selectedFinish(name) ? state.finish(name).display_name : <>&nbsp;</>}
       </div>
