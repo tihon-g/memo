@@ -34,7 +34,7 @@ const Sketchbook = observer(({productid}) => {
 
       <div className={'product'}>
         <a href={"../"} className={'back-link'}><ChevronLeftIcon />Back to list</a>
-        <h2>{state.product.name}</h2>
+        <h2 className={'product--header'}>{state.product.name}</h2>
 
         <div className={'render'}>
           <div className={'render__container'}>

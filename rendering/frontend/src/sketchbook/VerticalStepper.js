@@ -11,7 +11,7 @@ export const StepperItem = ({ label, active, isCollapsed, handleClick, children,
   return (
     <>
       <div className={labelClasses} onClick={handleClick}>
-        <span>{label}</span>
+        {label}
       </div>
       <div className={`stepper-item ${isCollapsed ? 'collapsed-' + position : 'expanded'}`} aria-expanded={isCollapsed}>
         {children}

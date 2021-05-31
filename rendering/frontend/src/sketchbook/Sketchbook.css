@@ -17,6 +17,23 @@
     grid-auto-flow: column;
 }
 
+@media only screen and (max-width: 800px) {
+    .product {
+        display: block;
+        padding: 24px 8px;
+    }
+}
+
+@media only screen and (max-width: 1260px) {
+    .product {
+        grid-template-columns: 3fr 2fr;
+    }
+}
+
+.product--header {
+    grid-column: 1 / -1;
+}
+
 .configuration {
     grid-row: 3 / span 1;
 }
@@ -29,7 +46,7 @@
 
     display: flex;
     align-items: center;
-    justify-content: start;
+    justify-self: start;
 
     margin-bottom: var(--spacing-sm);
     color: var(--gray-light);
@@ -84,8 +101,6 @@
 
 .render {
     align-self: start;
-    position: sticky;
-    top: 16px;
     display: flex;
     flex-direction: column;
     align-items: start;
@@ -141,6 +156,16 @@
     grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
 }
 
+.palette.hidden {
+    display: none;
+}
+
+@media only screen and (max-width: 800px) {
+    .palette {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    }
+}
+
 .finish-swatch-img {
     width: 100%;
 
@@ -173,6 +198,17 @@
     color: rgba(20, 20, 20, 0.5);
     font-size: 18px;
     margin-bottom: 8px;
+}
+
+.palette-paging {
+    display: flex;
+    margin-top: 32px;
+    justify-content: space-between;
+    color: var(--gray-dark);
+}
+
+.palette-paging--arrow {
+    cursor: pointer;
 }
 
 
@@ -212,8 +248,10 @@
 
 .vertical-stepper {
     display: grid;
-    grid-template-columns: minmax(140px, min-content) 48px 1fr;
+    grid-template-columns: minmax(140px, min-content) 32px 1fr;
     grid-auto-flow: row dense;
+
+    overflow: hidden;
 }
 
 .vertical-stepper__divider {
@@ -229,6 +267,7 @@
     grid-column: 3 / 4;
     transition: all 0.3s ease-in-out;
     opacity: 1;
+    padding: 16px;
 }
 
 .stepper-item.collapsed-above {
@@ -267,4 +306,42 @@
 .stepper-item-label--expanded {
     font-weight: 700;
     border-right: 5px solid currentColor;
+}
+
+@media only screen and (max-width: 1260px) {
+    .vertical-stepper {
+        grid-template-columns: repeat(5, 1fr);
+        margin-top: 32px;
+    }
+
+    .vertical-stepper__divider {
+        display: none;
+    }
+
+    .stepper-item {
+        grid-row: 2 / 3;
+        grid-column: 1 / span 9;
+        padding: 24px 12px;
+    }
+
+    .stepper-item-label {
+        grid-column: unset;
+        grid-row: 1 / 2;
+        justify-self: start;
+        padding: 6px 0;
+        margin: 0 12px;
+    }
+
+    .stepper-item-label--expanded {
+        border-right: none;
+        border-bottom: 5px solid currentColor;
+    }
+
+    .stepper-item.collapsed-above {
+        transform: translateX(200px);
+    }
+
+    .stepper-item.collapsed-below {
+        transform: translateX(-200px);
+    }
 }
