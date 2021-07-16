@@ -7,7 +7,7 @@ from sketchbook.serializers import ProductSerializer
 
 
 class ProductsListView(ListView):
-    queryset = Product.objects.filter(~Q(type='toy'))
+    queryset = Product.objects.filter(~Q(type='toy')).order_by('sort_order') #.order_by('collection')
     template_name = 'sketchbook/products_list.html'
 
 

@@ -98,7 +98,7 @@ class Pattern(models.Model):
         return mark_safe(u'<a href="/material/pattern/{}">{}</a>'.format(self.pk, self.name))
 
     def url(self):
-        return mark_safe(u'<a href="{0}" target="_blank"><img src="{0}" width="100"/></a>'.format("/static/material/swatches/swatch_p{}.jpg".format(self.pk)))
+        return mark_safe(u'<a href="{0}" target="_blank"><img src="{0}" width="100"/></a>'.format(f"/static/material/swatches/swatch_p{self.pk}.jpg"))
 
     def swatch_src(self):
         return os.path.join(settings.STATIC_URL, 'material', 'swatches', f'swatch_p{self.id}.jpg')
@@ -135,6 +135,12 @@ class Pattern(models.Model):
                 return png if os.path.exists(png) else jpg
         return ""
         # roughness value in features
+
+    @property
+    def display_name(self):
+        #return f"**{self.name}**"
+        return self.name.replace('_', ' ') + (f" by {self.by}" if self.by else "")
+
 
 
 class Finish(models.Model):

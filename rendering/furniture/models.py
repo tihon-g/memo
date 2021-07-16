@@ -19,12 +19,14 @@ from django.core.files.storage import FileSystemStorage
 from django.db import models
 
 # DEFAULT_FILE_STORAGE.
-
+swatches_location='static/furniture/swatches'
+f_swatches = FileSystemStorage(location=swatches_location)
 fs_models = FileSystemStorage(location='static/furniture/models')
 fs_blender = FileSystemStorage(location='static/furniture/models/blender')  #settings.RENDER_MACHINE['MODELS_DIR']
 fs_glb = FileSystemStorage(location='static/furniture/models/gltf')
 fs_sw = FileSystemStorage(location='static/furniture/models/sw')
 
+print("f_swatches!!", str(f_swatches.location))
 
 class Model3D(models.Model):
     """
@@ -143,8 +145,20 @@ class Product(models.Model):
     product_code = models.CharField(max_length=32, null=True, blank='')
     type = models.CharField(max_length=5, choices=types)
     collection = models.CharField(max_length=32)
-    swatch = models.ImageField(upload_to='static/furniture/swatches',
-                               height_field=None, width_field=None, max_length=100, null=True, blank=True)
+    sort_order = models.IntegerField(blank=True, null=True)
+    swatch = models.ImageField(
+        storage=f_swatches, # <- it is a good way for store uploaded swatches in staticroot instead of mediaroot
+        #upload_to='static/furniture/swatches', <- this way goes to  save in media root
+        height_field=None, width_field=None, max_length=100, null=True, blank=True)
+
+    @property
+    def swatch_url(self):
+        print("swatch_url", self.swatch, self.swatch.url,  f_swatches.url(self.swatch))
+        return f"/{swatches_location}/{self.swatch}"
+        # if len(self.swatch.url) and os.path.exists(os.path.join(settings.MEDIA_ROOT, str(self.swatch))):
+        #     return settings.MEDIA_URL+str(self.swatch)
+        # else:
+        #     return "/"+str(self.swatch)
 
     @property
     def relRendersPath(self):
@@ -205,7 +219,7 @@ class Product(models.Model):
             f'http://sketchbook.memofurniture.com/?product_code={self.product_code}'))
 
     def swatch_link(self):
-        return mark_safe(u'<a href="{0}" target="_blank"><img src="/{0}" width="100"/></a>'.format(self.swatch))
+        return mark_safe(u'<a href="{0}" target="_blank"><img src="{0}" width="100"/></a>'.format(self.swatch_url))
 
     @property
     def renders(self):

@@ -12,7 +12,8 @@
 Запуск для разработки:
 1. `python manage.py runserver`
 2. `npm run start` в папке rendering/frontend/ для сборки фронтенда react (при необходимости также запустить `npm install`)
-3. `celery -A rendering worker -l INFO` для рендера
+3. `redis-server`
+4. `celery -A rendering worker -l INFO` для рендера
 
 
 архитектура:
@@ -58,7 +59,6 @@ Celery используется для асинхронного выполнен
 - https://sioux.8images.com/admin/material/maps/
 - если выбран режим pattern - значит для конкрентного финиша будет использоваться общий для паттерна файл
 - если выбран режим finish - значит для конкрентного финиша будет использоваться уникальный для финиша файл
-
 
 
 Базовые сущности (model, mesh, product, productkind=style, part)

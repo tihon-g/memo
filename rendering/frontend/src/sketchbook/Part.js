@@ -34,8 +34,8 @@ const Part = observer(({name, natures, optional, removable}) => {
             <h5>Pattern</h5>
             <Select value={state.selectedPattern(name)}
                     onChange={(value) => state.changePattern(name, parseInt(value))}>
-              {patterns.map(item => (
-                <option value={item.id} key={item.id}>{item.name}</option>
+              {patterns.sort((a,b) => (a.name > b.name) ? 1 : -1 ).map(item => (
+                <option value={item.id} key={item.id}>{item.display_name}</option>
               ))}
             </Select>
           </div>

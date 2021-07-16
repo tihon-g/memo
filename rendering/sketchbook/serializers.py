@@ -38,7 +38,7 @@ class PatternSerializer(ModelSerializer):
 
     class Meta:
         model = Pattern
-        fields = ['id', 'name', 'finishes']
+        fields = ['id', 'name', 'finishes', 'display_name']
 
 
 class NatureSerializer(ModelSerializer):

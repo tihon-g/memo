@@ -8,7 +8,7 @@
 		<div class="row mt-3">
       {% for product in product_list %}
 	        <a class="col-3 text-center my-4" href="{{ product.id }}">
-	          <img src="{% if product.swatch %}/{{product.swatch}}{%else%}{%static 'furniture/swatches/unknown.jpg'%}{%endif%}"
+	          <img src="{% if product.swatch %}{{product.swatch_url}}{%else%}{%static 'furniture/swatches/unknown.jpg'%}{%endif%}"
 	               class="card-img-top img-fluid"
 	               alt="{{product.name}}">
 

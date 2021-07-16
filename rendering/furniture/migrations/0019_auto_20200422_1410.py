@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 ('product_code', models.CharField(blank='', max_length=32, null=True)),
                 ('type', models.CharField(choices=[('table', 'Table'), ('chair', 'Chair'), ('toy', 'Toy')], max_length=5)),
                 ('collection', models.CharField(max_length=32)),
-                ('swatch', models.ImageField(blank=True, null=True, upload_to='static/furniture/swatches')),
+                ('swatch', models.ImageField(blank=True, null=True, upload_to='/static/furniture/swatches')),
             ],
         ),
         migrations.CreateModel(
